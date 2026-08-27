@@ -1,0 +1,6 @@
+{
+  "appId": "uz.talimplus.student",
+  "appName": "Ta'lim Plus Student App",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
