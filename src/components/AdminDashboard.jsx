@@ -47,6 +47,7 @@ export default function AdminDashboard() {
   // Modals
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [editUserModal, setEditUserModal] = useState(null);
+  const [userSubmitting, setUserSubmitting] = useState(false);
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [selectedStudentForFreeze, setSelectedStudentForFreeze] = useState(null);
   const [roleFilter, setRoleFilter] = useState('ALL');
@@ -59,6 +60,8 @@ export default function AdminDashboard() {
   const [editGroupModal, setEditGroupModal] = useState(null);
   const [selectedGroupDetail, setSelectedGroupDetail] = useState(null);
   const [showAssignStudentModal, setShowAssignStudentModal] = useState(false);
+  const [assignSelectedGroupId, setAssignSelectedGroupId] = useState(null);
+  const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [assignTariffType, setAssignTariffType] = useState('STANDART');
   const [assignCustomPrice, setAssignCustomPrice] = useState('');
   const [assignDiscountNote, setAssignDiscountNote] = useState('');
@@ -92,6 +95,23 @@ export default function AdminDashboard() {
   const [editPaymentModal, setEditPaymentModal] = useState(null);
   const [editPaymentSubmitting, setEditPaymentSubmitting] = useState(false);
   const [selectedPaymentForReceipt, setSelectedPaymentForReceipt] = useState(null);
+
+  const normalizePhone = (phoneStr) => {
+    if (!phoneStr) return null;
+    let cleaned = phoneStr.trim().replace(/[^\d+]/g, '');
+    if (!cleaned || cleaned === '+') return null;
+    let digits = cleaned.replace(/\+/g, '');
+    if (digits.length === 9) {
+      return `+998${digits}`;
+    }
+    if (digits.length === 12 && digits.startsWith('998')) {
+      return `+${digits}`;
+    }
+    if (cleaned.startsWith('+')) {
+      return cleaned;
+    }
+    return `+${digits}`;
+  };
 
   const handleSelectStudentForPayment = async (student, month = paymentMonthVal) => {
     setSelectedStudentForPayment(student);
@@ -2922,45 +2942,69 @@ export default function AdminDashboard() {
 
       {/* MODALS */}
       {showAddUserModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '420px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900' }}>Yangi Foydalanuvchi</h3>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '420px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>Yangi Foydalanuvchi</h3>
             <form onSubmit={async e => {
               e.preventDefault();
-              const full_name = e.target.fullname.value;
-              const phone = e.target.phone.value;
-              const parent_phone = e.target.parent_phone.value && e.target.parent_phone.value !== '+998' ? e.target.parent_phone.value : null;
-              const password = e.target.password.value || '123456';
+              const full_name = e.target.fullname.value.trim();
+              const rawPhone = e.target.phone.value;
+              const rawParentPhone = e.target.parent_phone.value;
+              const password = e.target.password.value ? e.target.password.value.trim() : '123456';
               const role = e.target.role.value;
+
+              if (!full_name) {
+                triggerNotification("Iltimos, ism va familiyani kiriting!");
+                return;
+              }
+
+              const phone = normalizePhone(rawPhone);
+              if (!phone || phone.length < 9) {
+                triggerNotification("Telefon raqami noto'g'ri kiritildi! Masalan: +998901234567");
+                return;
+              }
+
+              const parent_phone = normalizePhone(rawParentPhone);
+
+              setUserSubmitting(true);
               try {
                 const res = await usersAPI.createUser({ full_name, phone, parent_phone, role, password });
                 if (res && res.id) {
                   setUsers(prev => [res, ...prev]);
-                  triggerNotification(`Yangi ${role} qo'shildi! ID: ${res.login_id}`);
+                  triggerNotification(`Yangi ${role === 'STUDENT' ? "o'quvchi" : role === 'TEACHER' ? "o'qituvchi" : "admin"} muvaffaqiyatli qo'shildi! ID: ${res.login_id} ✅`);
                   setShowAddUserModal(false);
                 }
               } catch(err) {
-                const detail = err.response?.data?.detail || "Foydalanuvchi yaratishda xatolik";
+                const detail = err.response?.data?.detail || "Foydalanuvchi yaratishda xatolik yuz berdi";
                 triggerNotification(detail);
+              } finally {
+                setUserSubmitting(false);
               }
             }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ism va familiya</label>
-              <input name="fullname" type="text" placeholder="Masalan: Ali Valiyev" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Telefon raqam</label>
-              <input name="phone" type="tel" defaultValue="+998" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ota-ona telefon raqami</label>
-              <input name="parent_phone" type="tel" defaultValue="+998" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ism va familiya *</label>
+              <input name="fullname" type="text" placeholder="Masalan: Ali Valiyev" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+              
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Telefon raqam *</label>
+              <input name="phone" type="tel" defaultValue="+998" placeholder="+998901234567" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+              
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ota-ona telefon raqami (ixtiyoriy)</label>
+              <input name="parent_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+              
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Parol (bo'sh qoldirilsa: 123456)</label>
-              <input name="password" type="text" placeholder="Masalan: Ali2026" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Rol (lavozim)</label>
-              <select name="role" style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+              <input name="password" type="text" placeholder="Standart: 123456" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+              
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Rol (lavozim) *</label>
+              <select name="role" style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontWeight: '700' }}>
                 <option value="STUDENT">O'quvchi</option>
                 <option value="TEACHER">O'qituvchi</option>
                 <option value="ADMIN">Admin</option>
               </select>
+              
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button type="button" onClick={() => setShowAddUserModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer' }}>Bekor qilish</button>
-                <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: '800' }}>Saqlash</button>
+                <button type="button" onClick={() => setShowAddUserModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
+                <button type="submit" disabled={userSubmitting} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: userSubmitting ? '#93c5fd' : '#2563eb', color: '#fff', cursor: userSubmitting ? 'not-allowed' : 'pointer', fontWeight: '800' }}>
+                  {userSubmitting ? "Saqlanmoqda..." : "Saqlash"}
+                </button>
               </div>
             </form>
           </div>
@@ -2968,38 +3012,66 @@ export default function AdminDashboard() {
       )}
 
       {editUserModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '420px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900' }}>Tahrirlash: {editUserModal.full_name}</h3>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '420px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>Tahrirlash: {editUserModal.full_name}</h3>
+            <p style={{ fontSize: '13px', color: '#2563eb', fontWeight: '800', marginBottom: '20px' }}>ID: {editUserModal.login_id}</p>
+            
             <form onSubmit={async e => {
               e.preventDefault();
-              const full_name = e.target.fullname.value;
-              const phone = e.target.phone.value;
-              const parent_phone = e.target.parent_phone.value && e.target.parent_phone.value !== '+998' ? e.target.parent_phone.value : null;
+              const full_name = e.target.fullname.value.trim();
+              const rawPhone = e.target.phone.value;
+              const rawParentPhone = e.target.parent_phone.value;
               const role = e.target.role.value;
+
+              if (!full_name) {
+                triggerNotification("Iltimos, ism va familiyani kiriting!");
+                return;
+              }
+
+              const phone = normalizePhone(rawPhone);
+              if (!phone || phone.length < 9) {
+                triggerNotification("Telefon raqami noto'g'ri kiritildi! Masalan: +998901234567");
+                return;
+              }
+
+              const parent_phone = normalizePhone(rawParentPhone);
               const updateData = { full_name, phone, parent_phone, role };
+
+              setUserSubmitting(true);
               try {
-                await usersAPI.updateUser(editUserModal.id, updateData);
-              } catch(err) {}
-              setUsers(prev => prev.map(u => u.id === editUserModal.id ? { ...u, full_name, phone, parent_phone, role } : u));
-              setEditUserModal(null);
-              triggerNotification("Ma'lumotlar saqlandi");
+                const res = await usersAPI.updateUser(editUserModal.id, updateData);
+                setUsers(prev => prev.map(u => u.id === editUserModal.id ? { ...u, ...(res || updateData) } : u));
+                setEditUserModal(null);
+                triggerNotification("Foydalanuvchi ma'lumotlari muvaffaqiyatli saqlandi! ✅");
+              } catch(err) {
+                const detail = err.response?.data?.detail || "Foydalanuvchini tahrirlashda xatolik yuz berdi";
+                triggerNotification(detail);
+              } finally {
+                setUserSubmitting(false);
+              }
             }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ism va familiya</label>
-              <input name="fullname" defaultValue={editUserModal.full_name} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Telefon raqam</label>
-              <input name="phone" type="tel" defaultValue={editUserModal.phone || '+998'} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ism va familiya *</label>
+              <input name="fullname" defaultValue={editUserModal.full_name} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+              
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Telefon raqam *</label>
+              <input name="phone" type="tel" defaultValue={editUserModal.phone || '+998'} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+              
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ota-ona telefon raqami</label>
-              <input name="parent_phone" type="tel" defaultValue={editUserModal.parent_phone || '+998'} style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Rol (lavozim)</label>
-              <select name="role" defaultValue={editUserModal.role} style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+              <input name="parent_phone" type="tel" defaultValue={editUserModal.parent_phone || '+998'} style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+              
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Rol (lavozim) *</label>
+              <select name="role" defaultValue={editUserModal.role} style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontWeight: '700' }}>
                 <option value="STUDENT">O'quvchi</option>
                 <option value="TEACHER">O'qituvchi</option>
                 <option value="ADMIN">Admin</option>
               </select>
+              
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button type="button" onClick={() => setEditUserModal(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer' }}>Bekor qilish</button>
-                <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: '800' }}>Saqlash</button>
+                <button type="button" onClick={() => setEditUserModal(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
+                <button type="submit" disabled={userSubmitting} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: userSubmitting ? '#93c5fd' : '#2563eb', color: '#fff', cursor: userSubmitting ? 'not-allowed' : 'pointer', fontWeight: '800' }}>
+                  {userSubmitting ? "Saqlanmoqda..." : "Saqlash"}
+                </button>
               </div>
             </form>
           </div>
@@ -3278,7 +3350,7 @@ export default function AdminDashboard() {
       )}
 
       {showAssignStudentModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '16px' }}>
           <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>O'quvchini Guruhga Biriktirish</h3>
             <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>Guruh, individual tarif (100% Grant, 50% chegirma, bola/katta tarifi yoki maxsus narx) ni belgilang.</p>
@@ -3286,35 +3358,55 @@ export default function AdminDashboard() {
               e.preventDefault();
               const studentId = parseInt(e.target.student_id.value);
               const groupId = parseInt(e.target.group_id.value);
+
+              if (!studentId || !groupId) {
+                triggerNotification("Iltimos, o'quvchi va guruhni tanlang!");
+                return;
+              }
+
               const customPriceVal = assignTariffType === 'GRANT_100' ? 0 : (assignCustomPrice ? parseFloat(assignCustomPrice) : null);
 
+              setAssignSubmitting(true);
               try {
                 const res = await groupsAPI.addStudentToGroup(groupId, studentId, {
                   tariff_type: assignTariffType,
+                  discount_type: assignTariffType,
                   custom_price: customPriceVal,
-                  discount_note: assignDiscountNote || null
+                  discount_note: assignDiscountNote ? assignDiscountNote.trim() : null
                 });
-                triggerNotification(res?.message || "O'quvchi guruhga biriktirildi! 🎓");
-                // Reload groups
+                triggerNotification(res?.message || "O'quvchi guruhga muvaffaqiyatli biriktirildi! 🎓");
+                
+                // Refresh groups list
                 const grps = await groupsAPI.getGroups();
                 setGroups(grps);
+
+                // Refresh group detail modal if open
+                if (selectedGroupDetail && (selectedGroupDetail.id === groupId || selectedGroupDetail.id === assignSelectedGroupId)) {
+                  const updatedDetail = await groupsAPI.getGroupDetail(groupId);
+                  setSelectedGroupDetail(updatedDetail);
+                }
+
+                setShowAssignStudentModal(false);
+                setAssignTariffType('STANDART');
+                setAssignCustomPrice('');
+                setAssignDiscountNote('');
+                setAssignSelectedGroupId(null);
               } catch(err) {
-                triggerNotification(err.response?.data?.detail || "Biriktirishda xatolik yuz berdi");
+                const detail = err.response?.data?.detail || "Biriktirishda xatolik yuz berdi";
+                triggerNotification(detail);
+              } finally {
+                setAssignSubmitting(false);
               }
-              setShowAssignStudentModal(false);
-              setAssignTariffType('STANDART');
-              setAssignCustomPrice('');
-              setAssignDiscountNote('');
             }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>O'quvchini tanlang *</label>
-              <select name="student_id" required style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}>
+              <select name="student_id" required defaultValue={assignSelectedStudentId || ''} style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}>
                 {users.filter(u => u.role === 'STUDENT').map(s => (
                   <option key={s.id} value={s.id}>{s.full_name} (ID: {s.login_id})</option>
                 ))}
               </select>
 
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Guruhni tanlang *</label>
-              <select name="group_id" required style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}>
+              <select name="group_id" required defaultValue={assignSelectedGroupId || (groups[0]?.id || '')} style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}>
                 {groups.map(g => (
                   <option key={g.id} value={g.id}>{g.name} ({g.days_of_week} • {courses.find(c => c.id === g.course_id)?.title || 'Fan'})</option>
                 ))}
@@ -3360,8 +3452,10 @@ export default function AdminDashboard() {
               />
 
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button type="button" onClick={() => setShowAssignStudentModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
-                <button type="submit" style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: '800' }}>Biriktirish</button>
+                <button type="button" onClick={() => { setShowAssignStudentModal(false); setAssignSelectedGroupId(null); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
+                <button type="submit" disabled={assignSubmitting} style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', background: assignSubmitting ? '#93c5fd' : '#2563eb', color: '#fff', cursor: assignSubmitting ? 'not-allowed' : 'pointer', fontWeight: '800' }}>
+                  {assignSubmitting ? "Biriktirilmoqda..." : "Biriktirish"}
+                </button>
               </div>
             </form>
           </div>
@@ -4281,7 +4375,13 @@ export default function AdminDashboard() {
 
             <h4 style={{ fontSize: '16px', fontWeight: '900', margin: '0 0 12px 0', color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>Biriktirilgan O'quvchilar ({selectedGroupDetail.students?.length || 0} ta)</span>
-              <button onClick={() => { setSelectedGroupDetail(null); setShowAssignStudentModal(true); }} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #2563eb', backgroundColor: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}>
+              <button 
+                onClick={() => { 
+                  setAssignSelectedGroupId(selectedGroupDetail.id); 
+                  setShowAssignStudentModal(true); 
+                }} 
+                style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #2563eb', backgroundColor: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
+              >
                 + O'quvchi qo'shish
               </button>
             </h4>
@@ -4322,19 +4422,39 @@ export default function AdminDashboard() {
                         )}
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                        <button 
-                          onClick={() => setTariffEditModal({
-                            group_id: selectedGroupDetail.id,
-                            student_id: s.id,
-                            student_name: s.full_name,
-                            current_tariff: s.discount_type || 'STANDART',
-                            current_price: s.custom_price || '',
-                            current_note: s.discount_note || ''
-                          })}
-                          style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
-                        >
-                          ⚙️ Tarifni o'zgartirish
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                          <button 
+                            onClick={() => setTariffEditModal({
+                              group_id: selectedGroupDetail.id,
+                              student_id: s.id,
+                              student_name: s.full_name,
+                              current_tariff: s.discount_type || 'STANDART',
+                              current_price: s.custom_price || '',
+                              current_note: s.discount_note || ''
+                            })}
+                            style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
+                          >
+                            ⚙️ Tarif
+                          </button>
+                          <button 
+                            onClick={async () => {
+                              if (!window.confirm(`"${s.full_name}"ni guruhdan chiqarishni tasdiqlaysizmi?`)) return;
+                              try {
+                                await groupsAPI.removeStudentFromGroup(selectedGroupDetail.id, s.id);
+                                triggerNotification(`"${s.full_name}" guruhdan muvaffaqiyatli chiqarildi!`);
+                                const updatedDetail = await groupsAPI.getGroupDetail(selectedGroupDetail.id);
+                                setSelectedGroupDetail(updatedDetail);
+                                const grps = await groupsAPI.getGroups();
+                                setGroups(grps);
+                              } catch(err) {
+                                triggerNotification(err.response?.data?.detail || "Guruhdan chiqarishda xatolik yuz berdi");
+                              }
+                            }}
+                            style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
+                          >
+                            ❌ Chiqarish
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

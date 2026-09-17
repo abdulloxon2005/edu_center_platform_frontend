@@ -49,6 +49,10 @@ export const authAPI = {
     const res = await api.post('/auth/login', { login_id: String(loginId), password });
     return res.data;
   },
+  telegramLogin: async (telegramId) => {
+    const res = await api.post('/auth/telegram-login', { telegram_id: String(telegramId) });
+    return res.data;
+  },
   me: async () => {
     const res = await api.get('/auth/me');
     return res.data;
@@ -318,7 +322,7 @@ export const financeAPI = {
     return res.data;
   },
   calculateProration: async (params) => {
-    const res = await api.get('/finance/calculator/proration', { params });
+    const res = await api.post('/finance/calculate-proration', null, { params });
     return res.data;
   },
   autoRunMonthlyBilling: async (monthFor = null) => {
@@ -497,7 +501,8 @@ export const reportsAPI = {
   downloadExcel: async (params) => {
     const res = await api.get('/reports/export/excel', {
       params,
-      responseType: 'blob'
+      responseType: 'blob',
+      timeout: 60000
     });
     const url = window.URL.createObjectURL(new Blob([res.data]));
     const link = document.createElement('a');
@@ -511,7 +516,8 @@ export const reportsAPI = {
   downloadPdf: async (params) => {
     const res = await api.get('/reports/export/pdf', {
       params,
-      responseType: 'blob'
+      responseType: 'blob',
+      timeout: 60000
     });
     const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
     const link = document.createElement('a');
@@ -525,7 +531,8 @@ export const reportsAPI = {
   downloadDocx: async (params) => {
     const res = await api.get('/reports/export/docx', {
       params,
-      responseType: 'blob'
+      responseType: 'blob',
+      timeout: 60000
     });
     const url = window.URL.createObjectURL(new Blob([res.data]));
     const link = document.createElement('a');

@@ -119,6 +119,14 @@ export default function TeacherDashboard() {
   };
 
   useEffect(() => {
+    if (window.Telegram?.WebApp) {
+      try {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      } catch (e) {
+        console.warn("Telegram WebApp init:", e);
+      }
+    }
     fetchTeacherData();
   }, []);
 
