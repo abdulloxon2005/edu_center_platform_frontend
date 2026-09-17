@@ -81,29 +81,6 @@ export default function StudentApp() {
     }
   }, []);
 
-  useEffect(() => {
-    loadAllStudentData();
-  }, []);
-
-  useEffect(() => {
-    let timerId = null;
-    if (activeTakingExam && examTimeRemaining > 0 && !examResultOutcome) {
-      timerId = setInterval(() => {
-        setExamTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(timerId);
-            handleSubmitOnlineExam();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timerId) clearInterval(timerId);
-    };
-  }, [activeTakingExam, examTimeRemaining, examResultOutcome]);
-
   const loadAllStudentData = async () => {
     setLoading(true);
     try {
@@ -161,6 +138,46 @@ export default function StudentApp() {
     setLoading(false);
   };
 
+  const handleSubmitOnlineExam = async (e) => {
+    if (e) e.preventDefault();
+    if (!activeTakingExam) return;
+
+    setSubmittingExam(true);
+    try {
+      const res = await analyticsAPI.submitOnlineExam(activeTakingExam.id, userAnswers);
+      setExamResultOutcome(res);
+      triggerToast(`Imtihon topshirildi! Natija: ${res.score}/${res.max_score} ball 🎯`);
+      loadAllStudentData();
+    } catch (err) {
+      const detail = err.response?.data?.detail || "Imtihonni topshirishda xatolik";
+      triggerToast(`❌ ${detail}`);
+    }
+    setSubmittingExam(false);
+  };
+
+  useEffect(() => {
+    loadAllStudentData();
+  }, []);
+
+  useEffect(() => {
+    let timerId = null;
+    if (activeTakingExam && examTimeRemaining > 0 && !examResultOutcome) {
+      timerId = setInterval(() => {
+        setExamTimeRemaining(prev => {
+          if (prev <= 1) {
+            clearInterval(timerId);
+            handleSubmitOnlineExam();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timerId) clearInterval(timerId);
+    };
+  }, [activeTakingExam, examTimeRemaining, examResultOutcome]);
+
   const handleSubmitHomework = async (e) => {
     e.preventDefault();
     if (!showSubmitModalHw) return;
@@ -214,23 +231,6 @@ export default function StudentApp() {
     } catch (err) {
       triggerToast("Savollarni ochishda xatolik yuz berdi");
     }
-  };
-
-  const handleSubmitOnlineExam = async (e) => {
-    if (e) e.preventDefault();
-    if (!activeTakingExam) return;
-
-    setSubmittingExam(true);
-    try {
-      const res = await analyticsAPI.submitOnlineExam(activeTakingExam.id, userAnswers);
-      setExamResultOutcome(res);
-      triggerToast(`Imtihon topshirildi! Natija: ${res.score}/${res.max_score} ball 🎯`);
-      loadAllStudentData();
-    } catch (err) {
-      const detail = err.response?.data?.detail || "Imtihonni topshirishda xatolik";
-      triggerToast(`❌ ${detail}`);
-    }
-    setSubmittingExam(false);
   };
 
   const formatTimer = (seconds) => {

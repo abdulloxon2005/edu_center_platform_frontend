@@ -118,18 +118,6 @@ export default function TeacherDashboard() {
     setTimeout(() => setNotificationToast(''), 4500);
   };
 
-  useEffect(() => {
-    if (window.Telegram?.WebApp) {
-      try {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-      } catch (e) {
-        console.warn("Telegram WebApp init:", e);
-      }
-    }
-    fetchTeacherData();
-  }, []);
-
   const fetchTeacherData = async () => {
     setLoading(true);
     try {
@@ -178,6 +166,18 @@ export default function TeacherDashboard() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (window.Telegram?.WebApp) {
+      try {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      } catch (e) {
+        console.warn("Telegram WebApp init:", e);
+      }
+    }
+    fetchTeacherData();
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();

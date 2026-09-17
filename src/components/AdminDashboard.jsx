@@ -61,6 +61,7 @@ export default function AdminDashboard() {
   const [selectedGroupDetail, setSelectedGroupDetail] = useState(null);
   const [showAssignStudentModal, setShowAssignStudentModal] = useState(false);
   const [assignSelectedGroupId, setAssignSelectedGroupId] = useState(null);
+  const [assignSelectedStudentId, setAssignSelectedStudentId] = useState(null);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [assignTariffType, setAssignTariffType] = useState('STANDART');
   const [assignCustomPrice, setAssignCustomPrice] = useState('');
@@ -332,18 +333,21 @@ export default function AdminDashboard() {
   
   const adminName = localStorage.getItem('full_name') || 'Administrator';
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const triggerNotification = (msg) => {
+    setNotificationToast(msg);
+    setTimeout(() => setNotificationToast(''), 4000);
+  };
 
-  useEffect(() => {
-    if (activeTab === 'reports' && !reportData) {
-      fetchReportData();
+  const fetchLeads = async () => {
+    setLeadsLoading(true);
+    try {
+      const data = await crmAPI.getLeads();
+      if (Array.isArray(data)) setLeads(data);
+    } catch (e) {
+      setLeads([]);
     }
-    if (activeTab === 'leads' && leads.length === 0) {
-      fetchLeads();
-    }
-  }, [activeTab]);
+    setLeadsLoading(false);
+  };
 
   const fetchData = async () => {
     try {
@@ -405,7 +409,7 @@ export default function AdminDashboard() {
     try {
       const st = await financeAPI.getDashboardStats();
       let debtors = [];
-      try { debtors = await financeAPI.getDebtors(); } catch(_) {}
+      try { debtors = await financeAPI.getDebtors(); } catch(e) { debtors = []; }
       if(st) {
         setStats({
           totalIncome: st.total_income || 0,
@@ -436,23 +440,18 @@ export default function AdminDashboard() {
     setSchedules([]);
   };
 
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const triggerNotification = (msg) => {
-    setNotificationToast(msg);
-    setTimeout(() => setNotificationToast(''), 4000);
-  };
-
-  // Leads / Konsultatsiya funksiyalari
-  const fetchLeads = async () => {
-    setLeadsLoading(true);
-    try {
-      const data = await crmAPI.getLeads();
-      if (Array.isArray(data)) setLeads(data);
-    } catch (e) {
-      setLeads([]);
+  useEffect(() => {
+    if (activeTab === 'reports' && !reportData) {
+      fetchReportData();
     }
-    setLeadsLoading(false);
-  };
+    if (activeTab === 'leads' && leads.length === 0) {
+      fetchLeads();
+    }
+  }, [activeTab]);
 
   const handleUpdateLeadStatus = async (leadId, newStatus, notes = null) => {
     try {
