@@ -23,19 +23,30 @@ class ErrorBoundary extends Component {
           textAlign: 'center', fontFamily: 'sans-serif'
         }}>
           <div style={{ fontSize: '60px', marginBottom: '20px' }}>⚠️</div>
-          <h2 style={{ color: '#dc2626', marginBottom: '10px' }}>Kutilmagan xatolik yuz berdi</h2>
-          <p style={{ color: '#6b7280', marginBottom: '20px', maxWidth: '500px' }}>
-            Ilovada xatolik yuz berdi. Iltimos sahifani yangilang yoki administratorga murojaat qiling.
+          <h2 style={{ color: '#dc2626', marginBottom: '10px', fontSize: '24px', fontWeight: '800' }}>Kutilmagan xatolik yuz berdi</h2>
+          <p style={{ color: '#64748b', marginBottom: '24px', maxWidth: '500px', fontSize: '14px', lineHeight: '1.6' }}>
+            Ilovada xatolik yuz berdi. Iltimos sahifani yangilang yoki quyidagi tugma orqali qayta urinib ko'ring.
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '10px 24px', backgroundColor: '#2563eb', color: '#fff',
-              border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px'
-            }}
-          >
-            Sahifani yangilash
-          </button>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button
+              onClick={() => this.setState({ hasError: false, error: null })}
+              style={{
+                padding: '12px 24px', backgroundColor: '#eff6ff', color: '#1d4ed8',
+                border: '1px solid #bfdbfe', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700'
+              }}
+            >
+              🔄 Qayta urinib ko'rish
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '12px 24px', backgroundColor: '#2563eb', color: '#fff',
+                border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '800'
+              }}
+            >
+              Sahifani to'liq yangilash
+            </button>
+          </div>
         </div>
       );
     }
