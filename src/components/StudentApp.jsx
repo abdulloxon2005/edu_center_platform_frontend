@@ -14,7 +14,7 @@ export default function StudentApp() {
     userId: localStorage.getItem('user_id') || null,
     phone: '',
     parentPhone: '',
-    course: 'Kurs yuklanmoqda...',
+    course: 'Fan yuklanmoqda...',
     group: 'Guruh yuklanmoqda...',
     teacher: 'O\'qituvchi',
     coins: 0,
@@ -480,7 +480,7 @@ export default function StudentApp() {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.85, fontWeight: '800' }}>Faol Kurs</span>
+                    <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.85, fontWeight: '800' }}>Faol Fan</span>
                     <h4 style={{ margin: '2px 0 0', fontSize: '17px', fontWeight: '900' }}>{studentInfo.course}</h4>
                     <p style={{ margin: '4px 0 0', fontSize: '12px', opacity: 0.9 }}>Guruh: <strong>{studentInfo.group}</strong></p>
                   </div>
@@ -1318,7 +1318,7 @@ export default function StudentApp() {
                   <code>{studentInfo.id}</code>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Guruh / Kurs:</span>
+                  <span style={{ color: '#64748b' }}>Guruh / Fan:</span>
                   <strong>{studentInfo.group}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1557,7 +1557,7 @@ export default function StudentApp() {
               </h3>
 
               <p style={{ fontSize: '12px', color: '#78350f', margin: 0, lineHeight: '1.6' }}>
-                O'quvchi <strong>"{selectedCertView.course_title}"</strong> kursi dasturi va imtihon sinovlarini muvaffaqiyatli yakunlagani tasdiqlanadi.
+                O'quvchi <strong>"{selectedCertView.course_title}"</strong> fani dasturi va imtihon sinovlarini muvaffaqiyatli yakunlagani tasdiqlanadi.
               </p>
 
               {/* QR CODE & VERIFICATION INFO */}

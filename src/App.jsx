@@ -57,6 +57,7 @@ function AppContent() {
                 </>
               } />
               
+              <Route path="/fanlar" element={<Courses />} />
               <Route path="/kurslar" element={<Courses />} />
               <Route path="/natijalar" element={<AboutUs />} />
               <Route path="/login" element={<Login />} />

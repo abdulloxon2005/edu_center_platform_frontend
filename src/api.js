@@ -89,8 +89,8 @@ export const usersAPI = {
     const res = await api.put(`/users/${userId}`, userData);
     return res.data;
   },
-  deleteUser: async (userId) => {
-    const res = await api.delete(`/users/${userId}`);
+  deleteUser: async (userId, permanent = false) => {
+    const res = await api.delete(`/users/${userId}`, { params: { permanent } });
     return res.data;
   },
 };
@@ -148,8 +148,12 @@ export const groupsAPI = {
     const res = await api.delete(`/groups/${groupId}`);
     return res.data;
   },
-  addStudentToGroup: async (groupId, studentId) => {
-    const res = await api.post(`/groups/${groupId}/students/${studentId}`);
+  addStudentToGroup: async (groupId, studentId, tariffData = {}) => {
+    const res = await api.post(`/groups/${groupId}/students/${studentId}`, tariffData);
+    return res.data;
+  },
+  updateStudentTariff: async (groupId, studentId, tariffData) => {
+    const res = await api.put(`/groups/${groupId}/students/${studentId}/tariff`, tariffData);
     return res.data;
   },
   getGroupStudents: async (groupId) => {
@@ -311,6 +315,10 @@ export const financeAPI = {
   getGroupStudentsBilling: async (groupId, monthFor = null) => {
     const params = monthFor ? { month_for: monthFor } : {};
     const res = await api.get(`/finance/group/${groupId}/students-billing`, { params });
+    return res.data;
+  },
+  calculateProration: async (params) => {
+    const res = await api.get('/finance/calculator/proration', { params });
     return res.data;
   },
   autoRunMonthlyBilling: async (monthFor = null) => {

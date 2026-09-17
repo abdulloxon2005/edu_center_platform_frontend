@@ -89,7 +89,7 @@ function Courses() {
     <div style={{ maxWidth: '1200px', margin: '80px auto 40px', padding: '0 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: '50px' }}>
         <h2 style={{ fontSize: '36px', fontWeight: '800', color: '#0f172a', marginBottom: '15px' }}>
-          Bizning <span className="gradient-text">Kurslar</span>
+          Bizning <span className="gradient-text">Fanlar</span>
         </h2>
       </div>
 

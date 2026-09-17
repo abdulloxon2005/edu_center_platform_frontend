@@ -36,8 +36,14 @@ export default function TelegramBotSimulator() {
         addBotMessage("✅ Telefon raqamingiz muvaffaqiyatli tasdiqlandi!\n\nAkkountingiz 3 ta farzandingiz (Ali, Madina, Hasan) bilan avtomatik bog'landi! 👦", [
           '👦 Farzandim', '📅 Dars Jadvali', '✅ Davomat', '📝 Uy Vazifalari', '📊 Natijalar', '💰 To\'lovlar', '❓ Yordam'
         ]);
-      } else if (btnText.includes('Farzandim') || btnText.includes('Farzandni almashtirish')) {
-        addBotMessage(`👦 Tanlangan Farzand: ${selectedChild}\n\n• Kurs: General English A2\n• Guruh: A2-05\n• O'qituvchi: Aziz Rahimov\n• Bugungi Dars: 18:00 – 19:30 (Room 204)\n• Bugungi Davomat: ✅ Keldi`, [
+      } else if (btnText.includes('Farzandni almashtirish')) {
+        const nextChild = childrenList[(childrenList.indexOf(selectedChild) + 1) % childrenList.length];
+        setSelectedChild(nextChild);
+        addBotMessage(`✅ Farzand almashtirildi! Hozirgi tanlangan farzand: ${nextChild} 👦`, [
+          '👦 Farzandim', '✅ Davomat', '📝 Uy Vazifalari', '💰 To\'lovlar'
+        ]);
+      } else if (btnText.includes('Farzandim')) {
+        addBotMessage(`👦 Tanlangan Farzand: ${selectedChild}\n\n• Fan: General English A2\n• Guruh: A2-05\n• O'qituvchi: Aziz Rahimov\n• Bugungi Dars: 18:00 – 19:30 (Room 204)\n• Bugungi Davomat: ✅ Keldi`, [
           '← Farzandni almashtirish', '📅 Dars Jadvali', '✅ Davomat (94%)', '📝 Uy Vazifalari', '💰 To\'lovlar'
         ]);
       } else if (btnText.includes('Davomat')) {
@@ -53,14 +59,8 @@ export default function TelegramBotSimulator() {
           '📎 Javob Yuborish (Student)', '← Bosh Menyuga Qaytish'
         ]);
       } else if (btnText.includes('To\'lovlar') || btnText.includes('To’lov')) {
-        addBotMessage(`💰 To'lov va Qarzdorlik Ma'lumotlari:\n\n• Kurs: General English A2\n• Oylik To'lov: 400,000 so'm\n• To'langan: 400,000 so'm\n• Qoldiq Qarzdorlik: 0 so'm (🟢 Paid)\n• Keyingi to'lov muddati: 1-Sentabr`, [
+        addBotMessage(`💰 To'lov va Qarzdorlik Ma'lumotlari:\n\n• Fan: General English A2\n• Oylik To'lov: 400,000 so'm\n• To'langan: 400,000 so'm\n• Qoldiq Qarzdorlik: 0 so'm (🟢 Paid)\n• Keyingi to'lov muddati: 1-Sentabr`, [
           '💳 Click / Payme Onlayn To\'lov', '← Bosh Menyuga Qaytish'
-        ]);
-      } else if (btnText.includes('Farzandni almashtirish')) {
-        const nextChild = childrenList[(childrenList.indexOf(selectedChild) + 1) % childrenList.length];
-        setSelectedChild(nextChild);
-        addBotMessage(`✅ Farzand almashtirildi! Hozirgi tanlangan farzand: <strong>${nextChild}</strong> 👦`, [
-          '👦 Farzandim', '✅ Davomat', '📝 Uy Vazifalari', '💰 To\'lovlar'
         ]);
       } else if (btnText.includes('Yordam') || btnText.includes('Murojaat')) {
         setShowSupportModal(true);

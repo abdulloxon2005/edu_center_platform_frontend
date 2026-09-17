@@ -144,7 +144,7 @@ function Banner() {
                 onChange={(e) => setFormData({...formData, selectedCourse: e.target.value})} 
                 style={inputStyle}
               >
-                <option value="">Qiziqayotgan kurs (ixtiyoriy)</option>
+                <option value="">Qiziqayotgan fan (ixtiyoriy)</option>
                 {courses.map(course => (
                   <option key={course.id} value={course.id}>{course.title}</option>
                 ))}

@@ -59,9 +59,25 @@ export default function AdminDashboard() {
   const [editGroupModal, setEditGroupModal] = useState(null);
   const [selectedGroupDetail, setSelectedGroupDetail] = useState(null);
   const [showAssignStudentModal, setShowAssignStudentModal] = useState(false);
+  const [assignTariffType, setAssignTariffType] = useState('STANDART');
+  const [assignCustomPrice, setAssignCustomPrice] = useState('');
+  const [assignDiscountNote, setAssignDiscountNote] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showProRataModal, setShowProRataModal] = useState(false);
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false);
+
+  // Smart Tariff & Payment Calculator States
+  const [calcMonthlyFee, setCalcMonthlyFee] = useState(500000);
+  const [calcTariffType, setCalcTariffType] = useState('STANDART');
+  const [calcTotalLessons, setCalcTotalLessons] = useState(12);
+  const [calcRemainingLessons, setCalcRemainingLessons] = useState(6);
+  const [calcCustomPrice, setCalcCustomPrice] = useState('');
+  const [calcSelectedStudent, setCalcSelectedStudent] = useState(null);
+  const [calcSelectedCourse, setCalcSelectedCourse] = useState(null);
+  const [calcDiscountNote, setCalcDiscountNote] = useState('');
+
+  // Tariff Edit for existing student in group modal
+  const [tariffEditModal, setTariffEditModal] = useState(null); // { group_id, student_id, student_name, current_tariff, current_price, current_note }
 
   // Enhanced Payment States
   const [selectedStudentForPayment, setSelectedStudentForPayment] = useState(null);
@@ -447,7 +463,7 @@ export default function AdminDashboard() {
     { id: 'leads', label: 'Konsultatsiyalar', icon: 'contact_mail' },
     { id: 'reports', label: 'Hisobotlar', icon: 'summarize' },
     { id: 'users', label: 'Foydalanuvchilar', icon: 'group' },
-    { id: 'courses', label: 'Kurslar', icon: 'auto_stories' },
+    { id: 'courses', label: 'Fanlar', icon: 'auto_stories' },
     { id: 'groups', label: 'Guruhlar', icon: 'groups' },
     { id: 'payments', label: 'To\'lovlar', icon: 'payments' },
     { id: 'schedule', label: 'Dars Jadvallari', icon: 'calendar_month' },
@@ -556,7 +572,7 @@ export default function AdminDashboard() {
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>#</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>F.I.O</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Telefon</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Kurs</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Fan</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Holat</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Sana</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Izoh</th>
@@ -847,11 +863,15 @@ export default function AdminDashboard() {
                     {u.student_status === 'ARCHIVED' ? 'Tiklash 🔄' : 'Arxivlash 📦'}
                   </button>
                   <button onClick={async () => {
+                    if (!window.confirm(`"${u.full_name}" foydalanuvchisini tizimdan butunlay o'chirmoqchimisiz? (Bog'langan barcha ma'lumotlar ham tozalanadi)`)) return;
                     try {
-                      await usersAPI.deleteUser(u.id);
+                      const res = await usersAPI.deleteUser(u.id, true);
                       setUsers(prev => prev.filter(usr => usr.id !== u.id));
-                      triggerNotification(`${u.full_name} o'chirildi`);
-                    } catch(e){ triggerNotification('O\'chirishda xatolik yuz berdi'); }
+                      triggerNotification(res?.message || `${u.full_name} muvaffaqiyatli o'chirildi 🗑️`);
+                    } catch(e) {
+                      const detail = e.response?.data?.detail || "O'chirishda xatolik yuz berdi";
+                      triggerNotification(`❌ ${detail}`);
+                    }
                   }} style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', backgroundColor: '#fee2e2', color: '#dc2626', cursor: 'pointer', fontWeight: '700' }}>O'chirish</button>
                 </td>
               </tr>
@@ -866,11 +886,11 @@ export default function AdminDashboard() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#0f172a', margin: 0 }}>O'quv Kurslari</h2>
-          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '14px' }}>Mavjud yo'nalishlar, narxlar va davomiyliklar</p>
+          <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#0f172a', margin: 0 }}>O'quv Fanlari</h2>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '14px' }}>Mavjud fanlar, oylik to'lovlar va davomiyliklar</p>
         </div>
         <button onClick={() => setShowAddCourseModal(true)} style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', padding: '12px 20px', borderRadius: '14px', cursor: 'pointer', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add</span> Yangi Kurs Qo'shish
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add</span> Yangi Fan Qo'shish
         </button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
@@ -903,11 +923,11 @@ export default function AdminDashboard() {
                   Tahrirlash
                 </button>
                 <button onClick={async () => {
-                  if (!window.confirm(`"${c.title}" kursini o'chirishni tasdiqlaysizmi?`)) return;
+                  if (!window.confirm(`"${c.title}" fanini o'chirishni tasdiqlaysizmi?`)) return;
                   try {
                     await coursesAPI.deleteCourse(c.id);
                     setCourses(prev => prev.filter(cr => cr.id !== c.id));
-                    triggerNotification(`${c.title} muvaffaqiyatli o'chirildi`);
+                    triggerNotification(`"${c.title}" fani muvaffaqiyatli o'chirildi`);
                   } catch(e){ triggerNotification("O'chirishda xatolik yuz berdi"); }
                 }} style={{ padding: '10px 14px', borderRadius: '12px', border: 'none', backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: '800', cursor: 'pointer', fontSize: '13px' }}>
                   O'chirish
@@ -945,7 +965,7 @@ export default function AdminDashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <span style={{ fontSize: '12px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', padding: '4px 10px', borderRadius: '6px', display: 'inline-block', marginBottom: '8px' }}>
-                    {course?.title || 'Kurs'}
+                    {course?.title || 'Fan'}
                   </span>
                   <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', margin: 0 }}>{g.name}</h3>
                 </div>
@@ -1246,7 +1266,7 @@ export default function AdminDashboard() {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
             <thead style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800' }}>
               <tr>
-                <th style={{ padding: '16px' }}>Guruh & Kurs</th>
+                <th style={{ padding: '16px' }}>Guruh & Fan</th>
                 <th style={{ padding: '16px' }}>Kunlar</th>
                 <th style={{ padding: '16px' }}>Dars Vaqti</th>
                 <th style={{ padding: '16px' }}>Dars Xonasi</th>
@@ -1264,7 +1284,7 @@ export default function AdminDashboard() {
                   <tr key={g.id} style={{ borderBottom: '1px solid #eff6ff' }}>
                     <td style={{ padding: '16px' }}>
                       <div style={{ fontWeight: '800', color: '#0f172a' }}>{g.name}</div>
-                      <div style={{ fontSize: '12px', color: '#2563eb', fontWeight: '700' }}>{course?.title || 'Kurs'}</div>
+                      <div style={{ fontSize: '12px', color: '#2563eb', fontWeight: '700' }}>{course?.title || 'Fan'}</div>
                     </td>
                     <td style={{ padding: '16px', fontWeight: '700', color: '#334155' }}>
                       {g.days_of_week === 'MON,WED,FRI' ? 'Dush / Chor / Jum (Toq)' : g.days_of_week === 'TUE,THU,SAT' ? 'Sesh / Pay / Shan (Juft)' : g.days_of_week === 'ALL' ? 'Har kuni (Dush - Shan)' : g.days_of_week}
@@ -1559,7 +1579,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', gap: '12px' }}>
               <input 
                 type="text" 
-                placeholder="Sertifikat kodi, o'quvchi ismi yoki kurs bo'yicha qidirish..." 
+                placeholder="Sertifikat kodi, o'quvchi ismi yoki fan bo'yicha qidirish..." 
                 value={certSearchText} 
                 onChange={e => setCertSearchText(e.target.value)} 
                 style={{ padding: '12px 16px', borderRadius: '14px', border: '1px solid #bfdbfe', flex: 1, backgroundColor: '#ffffff' }} 
@@ -1572,7 +1592,7 @@ export default function AdminDashboard() {
                   <tr>
                     <th style={{ padding: '16px' }}>Sertifikat Kodi</th>
                     <th style={{ padding: '16px' }}>O'quvchi</th>
-                    <th style={{ padding: '16px' }}>Kurs Nomi</th>
+                    <th style={{ padding: '16px' }}>Fan Nomi</th>
                     <th style={{ padding: '16px' }}>Berilgan Sana</th>
                     <th style={{ padding: '16px' }}>Holat</th>
                     <th style={{ padding: '16px', textAlign: 'center' }}>Harakat</th>
@@ -1645,7 +1665,7 @@ export default function AdminDashboard() {
                   {selectedAttendanceGroup.group_name || selectedAttendanceGroup.name} — Davomat Jurnali 📋
                 </h2>
                 <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>
-                  📚 Kurs: <strong>{selectedAttendanceGroup.course_title || selectedAttendanceGroup.courseName}</strong> • 👨‍🏫 O'qituvchi: <strong>{selectedAttendanceGroup.teacher_name}</strong> • 🚪 Xona: <strong>{selectedAttendanceGroup.room_name || selectedAttendanceGroup.roomName}</strong> • 📅 {selectedAttendanceGroup.days_of_week} ({selectedAttendanceGroup.start_time} - {selectedAttendanceGroup.end_time})
+                  📚 Fan: <strong>{selectedAttendanceGroup.course_title || selectedAttendanceGroup.courseName}</strong> • 👨‍🏫 O'qituvchi: <strong>{selectedAttendanceGroup.teacher_name}</strong> • 🚪 Xona: <strong>{selectedAttendanceGroup.room_name || selectedAttendanceGroup.roomName}</strong> • 📅 {selectedAttendanceGroup.days_of_week} ({selectedAttendanceGroup.start_time} - {selectedAttendanceGroup.end_time})
                 </p>
               </div>
             </div>
@@ -1884,7 +1904,7 @@ export default function AdminDashboard() {
           <div style={{ display: 'flex', gap: '12px' }}>
             <input 
               type="text" 
-              placeholder="Guruh, kurs yoki o'qituvchi bo'yicha qidirish..." 
+              placeholder="Guruh, fan yoki o'qituvchi bo'yicha qidirish..." 
               value={attendanceSearchQuery} 
               onChange={e => setAttendanceSearchQuery(e.target.value)} 
               style={{ padding: '10px 16px', borderRadius: '12px', border: '1px solid #bfdbfe', width: '280px', fontSize: '13px', backgroundColor: '#ffffff' }} 
@@ -2582,7 +2602,7 @@ export default function AdminDashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {[
-                { id: 'overview', label: '📚 Kurslar Samaradorligi', count: (reportData?.courses_breakdown || []).length },
+                { id: 'overview', label: '📖 Fanlar Samaradorligi', count: (reportData?.courses_breakdown || []).length },
                 { id: 'teachers', label: '👨‍🏫 O\'qituvchilar', count: (reportData?.teachers_breakdown || []).length },
                 { id: 'payments', label: '💳 To\'lovlar Tarixi', count: (reportData?.payments || []).length },
                 { id: 'expenses', label: '🧾 Xarajatlar Tarixi', count: (reportData?.expenses || []).length }
@@ -2640,7 +2660,7 @@ export default function AdminDashboard() {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontWeight: '800' }}>
-                    <th style={{ padding: '14px 16px' }}>Kurs Nomi</th>
+                    <th style={{ padding: '14px 16px' }}>Fan Nomi</th>
                     <th style={{ padding: '14px 16px' }}>Oylik Narxi</th>
                     <th style={{ padding: '14px 16px' }}>Davomiyligi</th>
                     <th style={{ padding: '14px 16px' }}>Faol Guruhlar</th>
@@ -2671,7 +2691,7 @@ export default function AdminDashboard() {
                   ))}
                   {(!reportData?.courses_breakdown || reportData.courses_breakdown.length === 0) && (
                     <tr>
-                      <td colSpan="6" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Kurslar ma'lumoti mavjud emas</td>
+                      <td colSpan="6" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Fanlar ma'lumoti mavjud emas</td>
                     </tr>
                   )}
                 </tbody>
@@ -3019,7 +3039,7 @@ export default function AdminDashboard() {
       {showAddCourseModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '420px' }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900' }}>Yangi Kurs</h3>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900' }}>Yangi Fan</h3>
             <form onSubmit={async e => {
               e.preventDefault();
               const title = e.target.title.value;
@@ -3030,19 +3050,19 @@ export default function AdminDashboard() {
                 const res = await coursesAPI.createCourse({ title, price_monthly, duration_months, description });
                 if (res && res.id) {
                   setCourses(prev => [res, ...prev]);
-                  triggerNotification(`"${title}" kursi qo'shildi`);
+                  triggerNotification(`"${title}" fani qo'shildi`);
                 }
-              } catch(err) { triggerNotification("Kurs qo'shishda xatolik"); }
+              } catch(err) { triggerNotification("Fan qo'shishda xatolik"); }
               setShowAddCourseModal(false);
             }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Kurs nomi</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Fan nomi</label>
               <input name="title" type="text" placeholder="Masalan: General English" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Oylik to'lov summasi (so'm)</label>
               <input name="price_monthly" type="number" placeholder="Masalan: 500000" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Davomiyligi (oy)</label>
               <input name="duration_months" type="number" placeholder="Masalan: 3" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Tavsif (ixtiyoriy)</label>
-              <textarea name="description" placeholder="Kurs haqida qisqa ma'lumot" style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', resize: 'none' }}></textarea>
+              <textarea name="description" placeholder="Fan haqida qisqa ma'lumot" style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', resize: 'none' }}></textarea>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button type="button" onClick={() => setShowAddCourseModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer' }}>Bekor qilish</button>
                 <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: '800' }}>Saqlash</button>
@@ -3065,11 +3085,11 @@ export default function AdminDashboard() {
               try {
                 await coursesAPI.updateCourse(editCourseModal.id, { title, price_monthly, duration_months, description });
                 setCourses(prev => prev.map(c => c.id === editCourseModal.id ? { ...c, title, price_monthly, duration_months, description } : c));
-                triggerNotification("Kurs ma'lumotlari saqlandi");
+                triggerNotification("Fan ma'lumotlari saqlandi");
               } catch(err) { triggerNotification("Tahrirlashda xatolik"); }
               setEditCourseModal(null);
             }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Kurs nomi</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Fan nomi</label>
               <input name="title" type="text" defaultValue={editCourseModal.title} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Oylik to'lov summasi (so'm)</label>
               <input name="price_monthly" type="number" defaultValue={editCourseModal.price_monthly} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
@@ -3117,7 +3137,7 @@ export default function AdminDashboard() {
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Guruh nomi</label>
               <input name="group_name" type="text" placeholder="Masalan: Python Backend 01" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
               
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Kursni tanlang</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Fanni tanlang</label>
               <select name="course_id" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
                 {courses.map(c => <option key={c.id} value={c.id}>{c.title} ({c.price_monthly?.toLocaleString()} UZS)</option>)}
               </select>
@@ -3203,7 +3223,7 @@ export default function AdminDashboard() {
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Guruh nomi</label>
               <input name="group_name" defaultValue={editGroupModal.name} type="text" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
               
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Kursni tanlang</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Fanni tanlang</label>
               <select name="course_id" defaultValue={editGroupModal.course_id} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
                 {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
@@ -3258,39 +3278,90 @@ export default function AdminDashboard() {
       )}
 
       {showAssignStudentModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '420px' }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900' }}>O'quvchi Biriktirish</h3>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>O'quvchini Guruhga Biriktirish</h3>
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>Guruh, individual tarif (100% Grant, 50% chegirma, bola/katta tarifi yoki maxsus narx) ni belgilang.</p>
             <form onSubmit={async e => {
               e.preventDefault();
               const studentId = parseInt(e.target.student_id.value);
               const groupId = parseInt(e.target.group_id.value);
+              const customPriceVal = assignTariffType === 'GRANT_100' ? 0 : (assignCustomPrice ? parseFloat(assignCustomPrice) : null);
 
               try {
-                const res = await groupsAPI.addStudentToGroup(groupId, studentId);
-                triggerNotification(res?.message || "O'quvchi guruhga biriktirildi!");
+                const res = await groupsAPI.addStudentToGroup(groupId, studentId, {
+                  tariff_type: assignTariffType,
+                  custom_price: customPriceVal,
+                  discount_note: assignDiscountNote || null
+                });
+                triggerNotification(res?.message || "O'quvchi guruhga biriktirildi! 🎓");
+                // Reload groups
+                const grps = await groupsAPI.getGroups();
+                setGroups(grps);
               } catch(err) {
-                triggerNotification("Biriktirishda xatolik yuz berdi");
+                triggerNotification(err.response?.data?.detail || "Biriktirishda xatolik yuz berdi");
               }
               setShowAssignStudentModal(false);
+              setAssignTariffType('STANDART');
+              setAssignCustomPrice('');
+              setAssignDiscountNote('');
             }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>O'quvchini tanlang</label>
-              <select name="student_id" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>O'quvchini tanlang *</label>
+              <select name="student_id" required style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}>
                 {users.filter(u => u.role === 'STUDENT').map(s => (
                   <option key={s.id} value={s.id}>{s.full_name} (ID: {s.login_id})</option>
                 ))}
               </select>
 
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Guruhni tanlang</label>
-              <select name="group_id" required style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Guruhni tanlang *</label>
+              <select name="group_id" required style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}>
                 {groups.map(g => (
-                  <option key={g.id} value={g.id}>{g.name} ({g.days_of_week})</option>
+                  <option key={g.id} value={g.id}>{g.name} ({g.days_of_week} • {courses.find(c => c.id === g.course_id)?.title || 'Fan'})</option>
                 ))}
               </select>
 
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>To'lov Tarifi / Imtiyoz</label>
+              <select 
+                value={assignTariffType} 
+                onChange={(e) => setAssignTariffType(e.target.value)} 
+                style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1e40af', fontWeight: '700', fontSize: '14px' }}
+              >
+                <option value="STANDART">Standart Tarif (Kurs to'liq oylik to'lovi)</option>
+                <option value="GRANT_100">100% Imtiyozli / Grant (0 UZS)</option>
+                <option value="DISCOUNT_50">50% Yarim Imtiyoz (Yarim to'lov)</option>
+                <option value="CHILD_TARIFF">Bolalar Tarifi (Kichik yoshdagilar narxi)</option>
+                <option value="ADULT_TARIFF">Kattalar Tarifi (Katta yoshdagilar narxi)</option>
+                <option value="CUSTOM_PRICE">Maxsus / Kelishilgan Narx (Ixtiyoriy summa)</option>
+              </select>
+
+              {assignTariffType !== 'STANDART' && assignTariffType !== 'GRANT_100' && (
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>
+                    {assignTariffType === 'DISCOUNT_50' ? "Oylik to'lov summasi (Bo'sh qoldirilsa kurs narxining 50% olinadi)" : "Belgilangan oylik narx (UZS) *"}
+                  </label>
+                  <input 
+                    type="number" 
+                    placeholder="Masalan: 350000" 
+                    value={assignCustomPrice} 
+                    onChange={e => setAssignCustomPrice(e.target.value)}
+                    required={assignTariffType === 'CUSTOM_PRICE' || assignTariffType === 'CHILD_TARIFF' || assignTariffType === 'ADULT_TARIFF'}
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }} 
+                  />
+                </div>
+              )}
+
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Imtiyoz / Tarif Sababi (Izoh)</label>
+              <input 
+                type="text" 
+                placeholder="Masalan: Olimpiada g'olibi, SAT guruh fiks, 2-farzand..." 
+                value={assignDiscountNote} 
+                onChange={e => setAssignDiscountNote(e.target.value)}
+                style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }} 
+              />
+
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button type="button" onClick={() => setShowAssignStudentModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer' }}>Bekor qilish</button>
-                <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: '800' }}>Biriktirish</button>
+                <button type="button" onClick={() => setShowAssignStudentModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
+                <button type="submit" style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: '800' }}>Biriktirish</button>
               </div>
             </form>
           </div>
@@ -3880,34 +3951,192 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Smart Payment & Tariff Calculator Modal */}
       {showProRataModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '420px' }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900' }}>Pro-rata Kalkulyator</h3>
-            <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '16px' }}>Oyni yarmida kelgan o'quvchilar uchun dars soniga qarab to'lovni hisoblash.</p>
-            <form onSubmit={e => {
-              e.preventDefault();
-              const monthly = parseFloat(e.target.monthly_fee.value) || 0;
-              const total = parseInt(e.target.total_lessons.value) || 12;
-              const rem = parseInt(e.target.remaining_lessons.value) || 0;
-              const calculated = Math.round((monthly / total) * rem);
-              triggerNotification(`Hisoblangan to'lov: ${calculated.toLocaleString()} UZS`);
-              setShowProRataModal(false);
-            }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Oylik to'lov summasi (so'm)</label>
-              <input name="monthly_fee" type="number" defaultValue={500000} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
-
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Oydagi jami darslar soni</label>
-              <input name="total_lessons" type="number" defaultValue={12} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
-
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Qolgan darslar soni</label>
-              <input name="remaining_lessons" type="number" defaultValue={6} required style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe' }} />
-
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button type="button" onClick={() => setShowProRataModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer' }}>Yopish</button>
-                <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: '800' }}>Hisoblash</button>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '28px', width: '560px', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #bfdbfe' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #eff6ff', paddingBottom: '16px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="material-symbols-outlined" style={{ color: '#2563eb', fontSize: '24px' }}>calculate</span>
+                  <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '900', color: '#0f172a' }}>To'lov & Tarif Kalkulyatori</h3>
+                </div>
+                <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>Imtiyozli (100% / 50%), yarmidan kelgan (pro-rata), bola/katta tarifi va SAT narxlarini tezkor hisoblash</p>
               </div>
-            </form>
+              <button onClick={() => setShowProRataModal(false)} style={{ background: '#f8fafc', border: '1px solid #bfdbfe', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* O'quvchini tanlash (Ixtiyoriy) */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px', display: 'block' }}>O'quvchini tanlash (Ixtiyoriy - to'lovga to'g'ridan-to'g'ri o'tkazish uchun)</label>
+                <select 
+                  value={calcSelectedStudent?.id || ''} 
+                  onChange={e => {
+                    const st = users.find(u => u.id === parseInt(e.target.value));
+                    setCalcSelectedStudent(st || null);
+                  }}
+                  style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}
+                >
+                  <option value="">-- O'quvchini tanlang (yoki erkin hisoblash) --</option>
+                  {users.filter(u => u.role === 'STUDENT').map(s => (
+                    <option key={s.id} value={s.id}>{s.full_name} (ID: {s.login_id})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tarif / Hisoblash Turi */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px', display: 'block' }}>Tarif / Hisoblash Turi *</label>
+                <select 
+                  value={calcTariffType} 
+                  onChange={e => setCalcTariffType(e.target.value)}
+                  style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #2563eb', background: '#eff6ff', color: '#1e40af', fontWeight: '800', fontSize: '14px' }}
+                >
+                  <option value="PRORATA">⏱️ Oyni yarmidan kelgan (Darslar soni bo'yicha Pro-rata)</option>
+                  <option value="GRANT_100">🎓 100% Imtiyozli / Grant (0 UZS)</option>
+                  <option value="DISCOUNT_50">🎁 50% Yarim Imtiyoz (Yarim to'lov)</option>
+                  <option value="CHILD_TARIFF">🧒 Bolalar Tarifi (Kichik yoshdagilar narxi)</option>
+                  <option value="ADULT_TARIFF">👨‍💼 Kattalar Tarifi (Katta yoshdagilar narxi)</option>
+                  <option value="CUSTOM_PRICE">🎯 Maxsus / Fiks Narx (SAT yoki kelishilgan summa)</option>
+                  <option value="STANDART">📘 Standart Oylik To'lov (To'liq summa)</option>
+                </select>
+              </div>
+
+              {/* Baza Oylik To'lov */}
+              <div style={{ display: 'grid', gridTemplateColumns: calcTariffType === 'PRORATA' ? '1fr 1fr 1fr' : '1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Baza Oylik Narx (UZS)</label>
+                  <input 
+                    type="number" 
+                    value={calcMonthlyFee} 
+                    onChange={e => setCalcMonthlyFee(parseFloat(e.target.value) || 0)} 
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px', fontWeight: '700' }} 
+                  />
+                </div>
+
+                {calcTariffType === 'PRORATA' && (
+                  <>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Oydagi jami dars</label>
+                      <input 
+                        type="number" 
+                        value={calcTotalLessons} 
+                        onChange={e => setCalcTotalLessons(parseInt(e.target.value) || 1)} 
+                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px', fontWeight: '700' }} 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Qolgan darslar</label>
+                      <input 
+                        type="number" 
+                        value={calcRemainingLessons} 
+                        onChange={e => setCalcRemainingLessons(parseInt(e.target.value) || 0)} 
+                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px', fontWeight: '700' }} 
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {(calcTariffType === 'CUSTOM_PRICE' || calcTariffType === 'CHILD_TARIFF' || calcTariffType === 'ADULT_TARIFF') && (
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Maxsus Narx (UZS) *</label>
+                  <input 
+                    type="number" 
+                    placeholder="Masalan: SAT kursi fiks narxi yoki bola/katta narxi"
+                    value={calcCustomPrice} 
+                    onChange={e => setCalcCustomPrice(e.target.value)} 
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px', fontWeight: '700' }} 
+                  />
+                </div>
+              )}
+
+              {/* Calculated Result Box */}
+              {(() => {
+                let finalAmount = calcMonthlyFee;
+                let explanation = "Standart to'liq oylik to'lov";
+
+                if (calcTariffType === 'GRANT_100') {
+                  finalAmount = 0;
+                  explanation = "100% Imtiyozli grant: To'lov talab qilinmaydi (0 UZS)";
+                } else if (calcTariffType === 'DISCOUNT_50') {
+                  finalAmount = Math.round(calcMonthlyFee * 0.5);
+                  explanation = `50% Chegirma: ${calcMonthlyFee.toLocaleString()} UZS * 50% = ${finalAmount.toLocaleString()} UZS`;
+                } else if (calcTariffType === 'PRORATA') {
+                  const t = calcTotalLessons || 12;
+                  const r = calcRemainingLessons || 0;
+                  finalAmount = Math.round((calcMonthlyFee / t) * r);
+                  explanation = `Pro-rata (${r}/${t} dars): (${calcMonthlyFee.toLocaleString()} / ${t}) * ${r} = ${finalAmount.toLocaleString()} UZS`;
+                } else if (calcTariffType === 'CHILD_TARIFF' || calcTariffType === 'ADULT_TARIFF' || calcTariffType === 'CUSTOM_PRICE') {
+                  finalAmount = calcCustomPrice ? parseFloat(calcCustomPrice) : calcMonthlyFee;
+                  explanation = `Belgilangan maxsus tarif: ${finalAmount.toLocaleString()} UZS`;
+                }
+
+                return (
+                  <div style={{ backgroundColor: '#f0fdf4', border: '2px dashed #86efac', padding: '18px 20px', borderRadius: '18px', textAlign: 'center', marginTop: '6px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#15803d', marginBottom: '4px' }}>HISOBLANGAN TO'LOV SUMMASI:</div>
+                    <div style={{ fontSize: '28px', fontWeight: '900', color: '#166534', letterSpacing: '-0.5px' }}>
+                      {finalAmount.toLocaleString()} <span style={{ fontSize: '18px' }}>UZS</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#166534', marginTop: '6px', fontWeight: '600' }}>
+                      {explanation}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowProRataModal(false)} 
+                  style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid #bfdbfe', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontWeight: '700', fontSize: '14px' }}
+                >
+                  Yopish
+                </button>
+                <button 
+                  type="button" 
+                  onClick={async () => {
+                    let finalAmount = calcMonthlyFee;
+                    let explanation = "Standart oylik to'lov";
+
+                    if (calcTariffType === 'GRANT_100') {
+                      finalAmount = 0;
+                      explanation = "100% Grant";
+                    } else if (calcTariffType === 'DISCOUNT_50') {
+                      finalAmount = Math.round(calcMonthlyFee * 0.5);
+                      explanation = "50% Chegirma";
+                    } else if (calcTariffType === 'PRORATA') {
+                      const t = calcTotalLessons || 12;
+                      const r = calcRemainingLessons || 0;
+                      finalAmount = Math.round((calcMonthlyFee / t) * r);
+                      explanation = `Pro-rata (${r}/${t} dars)`;
+                    } else if (calcTariffType === 'CHILD_TARIFF' || calcTariffType === 'ADULT_TARIFF' || calcTariffType === 'CUSTOM_PRICE') {
+                      finalAmount = calcCustomPrice ? parseFloat(calcCustomPrice) : calcMonthlyFee;
+                      explanation = `Tarif: ${calcTariffType}`;
+                    }
+
+                    setShowProRataModal(false);
+                    setPaymentAmountVal(finalAmount);
+                    setPaymentNoteVal(explanation);
+
+                    if (calcSelectedStudent) {
+                      await handleSelectStudentForPayment(calcSelectedStudent);
+                      setPaymentAmountVal(finalAmount);
+                    }
+                    setShowPaymentModal(true);
+                    triggerNotification(`Kalkulyator to'lovi (${finalAmount.toLocaleString()} UZS) to'lov oynasiga o'tkazildi! 💳`);
+                  }}
+                  style={{ flex: 2, padding: '14px', borderRadius: '14px', border: 'none', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: '#fff', cursor: 'pointer', fontWeight: '900', fontSize: '14px', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>payments</span>
+                  To'lovni Qabul Qilishga O'tkazish
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -3961,7 +4190,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #eff6ff', paddingBottom: '16px' }}>
               <div>
                 <span style={{ fontSize: '12px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', padding: '4px 10px', borderRadius: '6px' }}>
-                  Kurs Ma'lumotlari
+                  Fan Ma'lumotlari
                 </span>
                 <h3 style={{ margin: '8px 0 0', fontSize: '22px', fontWeight: '900', color: '#0f172a' }}>
                   {selectedCourseDetail.title}
@@ -3979,7 +4208,7 @@ export default function AdminDashboard() {
             </div>
 
             <h4 style={{ fontSize: '16px', fontWeight: '900', margin: '0 0 12px 0', color: '#0f172a' }}>
-              Ushbu kursga biriktirilgan guruhlar ({groups.filter(g => g.course_id === selectedCourseDetail.id).length} ta)
+              Ushbu fanga biriktirilgan guruhlar ({groups.filter(g => g.course_id === selectedCourseDetail.id).length} ta)
             </h4>
 
             <div style={{ border: '1px solid #bfdbfe', borderRadius: '16px', overflow: 'hidden' }}>
@@ -4028,11 +4257,11 @@ export default function AdminDashboard() {
       {/* 9. Group Details Modal */}
       {selectedGroupDetail && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '700px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '780px', maxWidth: '92%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #eff6ff', paddingBottom: '16px' }}>
               <div>
                 <span style={{ fontSize: '12px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', padding: '4px 10px', borderRadius: '6px' }}>
-                  {selectedGroupDetail.course?.title || courses.find(c => c.id === selectedGroupDetail.course_id)?.title || 'Kurs'}
+                  {selectedGroupDetail.course?.title || courses.find(c => c.id === selectedGroupDetail.course_id)?.title || 'Fan'}
                 </span>
                 <h3 style={{ margin: '8px 0 0', fontSize: '22px', fontWeight: '900', color: '#0f172a' }}>
                   {selectedGroupDetail.name} (Guruh ma'lumotlari)
@@ -4064,7 +4293,8 @@ export default function AdminDashboard() {
                     <th style={{ padding: '12px 16px' }}>ID</th>
                     <th style={{ padding: '12px 16px' }}>Ism Familiya</th>
                     <th style={{ padding: '12px 16px' }}>Telefon</th>
-                    <th style={{ padding: '12px 16px' }}>Ota-ona Tel</th>
+                    <th style={{ padding: '12px 16px' }}>Tarif / Imtiyoz</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'center' }}>Amal</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -4073,12 +4303,44 @@ export default function AdminDashboard() {
                       <td style={{ padding: '12px 16px', fontWeight: '800', color: '#2563eb' }}>{s.login_id}</td>
                       <td style={{ padding: '12px 16px', fontWeight: '700' }}>{s.full_name}</td>
                       <td style={{ padding: '12px 16px' }}>{s.phone}</td>
-                      <td style={{ padding: '12px 16px', color: '#64748b' }}>{s.parent_phone || "Mavjud emas"}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {s.discount_type === 'GRANT_100' ? (
+                          <span style={{ fontSize: '11px', backgroundColor: '#dcfce7', color: '#166534', padding: '3px 8px', borderRadius: '6px', fontWeight: '800' }}>100% Grant (0 UZS)</span>
+                        ) : s.discount_type === 'DISCOUNT_50' ? (
+                          <span style={{ fontSize: '11px', backgroundColor: '#fef3c7', color: '#92400e', padding: '3px 8px', borderRadius: '6px', fontWeight: '800' }}>50% Chegirma</span>
+                        ) : s.discount_type === 'CHILD_TARIFF' ? (
+                          <span style={{ fontSize: '11px', backgroundColor: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '6px', fontWeight: '800' }}>Bola tarifi {s.custom_price ? `(${s.custom_price.toLocaleString()} UZS)` : ''}</span>
+                        ) : s.discount_type === 'ADULT_TARIFF' ? (
+                          <span style={{ fontSize: '11px', backgroundColor: '#f3e8ff', color: '#6b21a8', padding: '3px 8px', borderRadius: '6px', fontWeight: '800' }}>Katta tarifi {s.custom_price ? `(${s.custom_price.toLocaleString()} UZS)` : ''}</span>
+                        ) : s.discount_type === 'CUSTOM_PRICE' ? (
+                          <span style={{ fontSize: '11px', backgroundColor: '#fae8ff', color: '#86198f', padding: '3px 8px', borderRadius: '6px', fontWeight: '800' }}>Maxsus ({s.custom_price?.toLocaleString()} UZS)</span>
+                        ) : (
+                          <span style={{ fontSize: '11px', backgroundColor: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontWeight: '700' }}>Standart</span>
+                        )}
+                        {s.discount_note && (
+                          <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>{s.discount_note}</div>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                        <button 
+                          onClick={() => setTariffEditModal({
+                            group_id: selectedGroupDetail.id,
+                            student_id: s.id,
+                            student_name: s.full_name,
+                            current_tariff: s.discount_type || 'STANDART',
+                            current_price: s.custom_price || '',
+                            current_note: s.discount_note || ''
+                          })}
+                          style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
+                        >
+                          ⚙️ Tarifni o'zgartirish
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {(!selectedGroupDetail.students || selectedGroupDetail.students.length === 0) && (
                     <tr>
-                      <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                      <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
                         Ushbu guruhga hali o'quvchilar biriktirilmagan
                       </td>
                     </tr>
@@ -4092,6 +4354,86 @@ export default function AdminDashboard() {
                 Yopish
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9.1 Tariff Edit Modal */}
+      {tariffEditModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>O'quvchi Tarifini O'zgartirish</h3>
+            <p style={{ fontSize: '13px', color: '#2563eb', fontWeight: '700', marginBottom: '20px' }}>{tariffEditModal.student_name}</p>
+
+            <form onSubmit={async e => {
+              e.preventDefault();
+              const tariffType = e.target.tariff_type.value;
+              const customPrice = tariffType === 'GRANT_100' ? 0 : (e.target.custom_price?.value ? parseFloat(e.target.custom_price.value) : null);
+              const discountNote = e.target.discount_note?.value || null;
+
+              try {
+                const res = await groupsAPI.updateStudentTariff(tariffEditModal.group_id, tariffEditModal.student_id, {
+                  tariff_type: tariffType,
+                  custom_price: customPrice,
+                  discount_note: discountNote
+                });
+                triggerNotification(res?.message || "O'quvchi tarifi muvaffaqiyatli yangilandi! 🎓");
+                
+                // Refresh group detail
+                const updatedDetail = await groupsAPI.getGroupDetail(tariffEditModal.group_id);
+                setSelectedGroupDetail(updatedDetail);
+              } catch(err) {
+                triggerNotification(err.response?.data?.detail || "Tarifni yangilashda xatolik yuz berdi");
+              }
+              setTariffEditModal(null);
+            }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>To'lov Tarifi / Imtiyoz *</label>
+              <select 
+                name="tariff_type" 
+                defaultValue={tariffEditModal.current_tariff || 'STANDART'}
+                onChange={e => {
+                  setTariffEditModal(prev => ({ ...prev, current_tariff: e.target.value }));
+                }}
+                style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1e40af', fontWeight: '800', fontSize: '14px' }}
+              >
+                <option value="STANDART">Standart Tarif (Kurs to'liq narxi)</option>
+                <option value="GRANT_100">100% Imtiyozli / Grant (0 UZS)</option>
+                <option value="DISCOUNT_50">50% Yarim Imtiyoz (Yarim to'lov)</option>
+                <option value="CHILD_TARIFF">Bolalar Tarifi (Kichik yoshdagilar narxi)</option>
+                <option value="ADULT_TARIFF">Kattalar Tarifi (Katta yoshdagilar narxi)</option>
+                <option value="CUSTOM_PRICE">Maxsus / Kelishilgan Narx (Ixtiyoriy summa)</option>
+              </select>
+
+              {tariffEditModal.current_tariff !== 'STANDART' && tariffEditModal.current_tariff !== 'GRANT_100' && (
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>
+                    {tariffEditModal.current_tariff === 'DISCOUNT_50' ? "Oylik to'lov summasi (Bo'sh qoldirilsa 50% hisoblanadi)" : "Belgilangan oylik narx (UZS) *"}
+                  </label>
+                  <input 
+                    name="custom_price" 
+                    type="number" 
+                    placeholder="Masalan: 350000" 
+                    defaultValue={tariffEditModal.current_price} 
+                    required={tariffEditModal.current_tariff === 'CUSTOM_PRICE' || tariffEditModal.current_tariff === 'CHILD_TARIFF' || tariffEditModal.current_tariff === 'ADULT_TARIFF'}
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }} 
+                  />
+                </div>
+              )}
+
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Tarif / Imtiyoz Sababi (Izoh)</label>
+              <input 
+                name="discount_note" 
+                type="text" 
+                placeholder="Masalan: Olimpiada g'olibi, SAT fiks narx, 2-farzand..." 
+                defaultValue={tariffEditModal.current_note} 
+                style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }} 
+              />
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" onClick={() => setTariffEditModal(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
+                <button type="submit" style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: '800' }}>Saqlash</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

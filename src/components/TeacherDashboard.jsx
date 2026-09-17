@@ -142,7 +142,7 @@ export default function TeacherDashboard() {
               const room = Array.isArray(roomsData) ? roomsData.find(r => r.id === g.room_id) : null;
               return {
                 ...g,
-                courseName: course?.title || 'Kurs',
+                courseName: course?.title || 'Fan',
                 coursePrice: course?.price_monthly || 500000,
                 roomName: room?.name || `${g.room_id}-xona`,
                 studentsList: Array.isArray(students) ? students : []
@@ -150,7 +150,7 @@ export default function TeacherDashboard() {
             } catch (e) {
               return {
                 ...g,
-                courseName: 'Kurs',
+                courseName: 'Fan',
                 coursePrice: 500000,
                 roomName: `${g.room_id}-xona`,
                 studentsList: []

@@ -59,8 +59,8 @@ function Navbar() {
           </Link>
         </li>
         <li>
-          <Link to="/kurslar" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = '#2563eb'} onMouseLeave={(e) => e.target.style.color = '#0f172a'}>
-            Kurslar
+          <Link to="/fanlar" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = '#2563eb'} onMouseLeave={(e) => e.target.style.color = '#0f172a'}>
+            Fanlar
           </Link>
         </li>
         <li>
