@@ -969,7 +969,12 @@ export default function AdminDashboard() {
         <div style={{ display: 'flex', gap: '12px' }}>
           <button 
             onClick={() => {
-              setAssignSelectedGroupId(null);
+              const firstStudent = (users || []).find(u => u && u.role === 'STUDENT');
+              const firstGroup = (groups || [])[0];
+              setAssignSelectedStudentId(firstStudent ? firstStudent.id : '');
+              setAssignSelectedGroupId(firstGroup ? firstGroup.id : '');
+              setAssignTariffType('STANDART');
+              setAssignCustomPrice('');
               setShowAssignStudentModal(true);
             }} 
             style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '12px 18px', borderRadius: '14px', cursor: 'pointer', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -3358,21 +3363,15 @@ export default function AdminDashboard() {
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '16px' }}>
           <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>O'quvchini Guruhga Biriktirish</h3>
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>Guruh, individual tarif (100% Grant, 50% chegirma, bola/katta tarifi yoki maxsus narx) ni belgilang.</p>
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>O'quvchi, guruh va kerakli to'lov tarifini tanlang.</p>
             <form onSubmit={async e => {
               e.preventDefault();
-              const studentIdVal = e.target.student_id?.value;
-              const groupIdVal = e.target.group_id?.value;
+              
+              const studentStudents = (users || []).filter(u => u && u.role === 'STUDENT');
+              const finalStudentId = parseInt(assignSelectedStudentId || studentStudents[0]?.id);
+              const finalGroupId = parseInt(assignSelectedGroupId || (groups || [])[0]?.id);
 
-              if (!studentIdVal || !groupIdVal) {
-                triggerNotification("Iltimos, o'quvchi va guruhni tanlang!");
-                return;
-              }
-
-              const studentId = parseInt(studentIdVal);
-              const groupId = parseInt(groupIdVal);
-
-              if (isNaN(studentId) || isNaN(groupId)) {
+              if (!finalStudentId || !finalGroupId || isNaN(finalStudentId) || isNaN(finalGroupId)) {
                 triggerNotification("Iltimos, o'quvchi va guruhni to'g'ri tanlang!");
                 return;
               }
@@ -3383,11 +3382,10 @@ export default function AdminDashboard() {
 
               setAssignSubmitting(true);
               try {
-                const res = await groupsAPI.addStudentToGroup(groupId, studentId, {
+                const res = await groupsAPI.addStudentToGroup(finalGroupId, finalStudentId, {
                   tariff_type: assignTariffType === 'STANDART' ? 'STANDARD' : assignTariffType,
                   discount_type: assignTariffType === 'STANDART' ? 'STANDARD' : assignTariffType,
-                  custom_price: customPriceVal,
-                  discount_note: assignDiscountNote ? String(assignDiscountNote).trim() : null
+                  custom_price: customPriceVal
                 });
                 triggerNotification(res?.message || "O'quvchi guruhga muvaffaqiyatli biriktirildi! 🎓");
                 
@@ -3400,9 +3398,9 @@ export default function AdminDashboard() {
                 }
 
                 // Refresh group detail modal if open
-                if (selectedGroupDetail && (selectedGroupDetail.id === groupId || selectedGroupDetail.id === assignSelectedGroupId)) {
+                if (selectedGroupDetail) {
                   try {
-                    const updatedDetail = await groupsAPI.getGroupDetail(groupId);
+                    const updatedDetail = await groupsAPI.getGroupDetail(finalGroupId);
                     if (updatedDetail) setSelectedGroupDetail(updatedDetail);
                   } catch(de) {
                     console.error("Group detail reload error:", de);
@@ -3412,7 +3410,6 @@ export default function AdminDashboard() {
                 setShowAssignStudentModal(false);
                 setAssignTariffType('STANDART');
                 setAssignCustomPrice('');
-                setAssignDiscountNote('');
                 setAssignSelectedGroupId(null);
                 setAssignSelectedStudentId(null);
               } catch(err) {
@@ -3426,7 +3423,8 @@ export default function AdminDashboard() {
               <select 
                 name="student_id" 
                 required 
-                defaultValue={assignSelectedStudentId || ((users || []).filter(u => u && u.role === 'STUDENT')[0]?.id || '')} 
+                value={assignSelectedStudentId || ((users || []).find(u => u && u.role === 'STUDENT')?.id || '')} 
+                onChange={e => setAssignSelectedStudentId(e.target.value)}
                 style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}
               >
                 {(users || []).filter(u => u && u.role === 'STUDENT').length === 0 ? (
@@ -3442,7 +3440,8 @@ export default function AdminDashboard() {
               <select 
                 name="group_id" 
                 required 
-                defaultValue={assignSelectedGroupId || ((groups || [])[0]?.id || '')} 
+                value={assignSelectedGroupId || ((groups || [])[0]?.id || '')} 
+                onChange={e => setAssignSelectedGroupId(e.target.value)}
                 style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}
               >
                 {(groups || []).length === 0 ? (
@@ -3474,7 +3473,7 @@ export default function AdminDashboard() {
               </select>
 
               {assignTariffType !== 'STANDART' && assignTariffType !== 'STANDARD' && assignTariffType !== 'GRANT_100' && (
-                <div style={{ marginBottom: '14px' }}>
+                <div style={{ marginBottom: '16px' }}>
                   <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>
                     {assignTariffType === 'DISCOUNT_50' ? "Oylik to'lov summasi (Bo'sh qoldirilsa kurs narxining 50% olinadi)" : "Belgilangan oylik narx (UZS) *"}
                   </label>
@@ -3489,16 +3488,7 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Imtiyoz / Tarif Sababi (Izoh)</label>
-              <input 
-                type="text" 
-                placeholder="Masalan: Olimpiada g'olibi, SAT guruh fiks, 2-farzand..." 
-                value={assignDiscountNote} 
-                onChange={e => setAssignDiscountNote(e.target.value)}
-                style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }} 
-              />
-
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                 <button type="button" onClick={() => { setShowAssignStudentModal(false); setAssignSelectedGroupId(null); setAssignSelectedStudentId(null); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
                 <button type="submit" disabled={assignSubmitting} style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', background: assignSubmitting ? '#93c5fd' : '#2563eb', color: '#fff', cursor: assignSubmitting ? 'not-allowed' : 'pointer', fontWeight: '800' }}>
                   {assignSubmitting ? "Biriktirilmoqda..." : "Biriktirish"}
@@ -4424,7 +4414,11 @@ export default function AdminDashboard() {
               <span>Biriktirilgan O'quvchilar ({selectedGroupDetail.students?.length || 0} ta)</span>
               <button 
                 onClick={() => { 
+                  const firstStudent = (users || []).find(u => u && u.role === 'STUDENT');
                   setAssignSelectedGroupId(selectedGroupDetail.id); 
+                  setAssignSelectedStudentId(firstStudent ? firstStudent.id : '');
+                  setAssignTariffType('STANDART');
+                  setAssignCustomPrice('');
                   setShowAssignStudentModal(true); 
                 }} 
                 style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #2563eb', backgroundColor: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
@@ -4536,13 +4530,11 @@ export default function AdminDashboard() {
               e.preventDefault();
               const tariffType = e.target.tariff_type.value;
               const customPrice = tariffType === 'GRANT_100' ? 0 : (e.target.custom_price?.value ? parseFloat(e.target.custom_price.value) : null);
-              const discountNote = e.target.discount_note?.value || null;
 
               try {
                 const res = await groupsAPI.updateStudentTariff(tariffEditModal.group_id, tariffEditModal.student_id, {
                   tariff_type: tariffType === 'STANDART' ? 'STANDARD' : tariffType,
-                  custom_price: customPrice,
-                  discount_note: discountNote
+                  custom_price: customPrice
                 });
                 triggerNotification(res?.message || "O'quvchi tarifi muvaffaqiyatli yangilandi! 🎓");
                 
@@ -4572,7 +4564,7 @@ export default function AdminDashboard() {
               </select>
 
               {tariffEditModal.current_tariff !== 'STANDART' && tariffEditModal.current_tariff !== 'STANDARD' && tariffEditModal.current_tariff !== 'GRANT_100' && (
-                <div style={{ marginBottom: '14px' }}>
+                <div style={{ marginBottom: '16px' }}>
                   <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>
                     {tariffEditModal.current_tariff === 'DISCOUNT_50' ? "Oylik to'lov summasi (Bo'sh qoldirilsa 50% hisoblanadi)" : "Belgilangan oylik narx (UZS) *"}
                   </label>
@@ -4587,16 +4579,7 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Tarif / Imtiyoz Sababi (Izoh)</label>
-              <input 
-                name="discount_note" 
-                type="text" 
-                placeholder="Masalan: Olimpiada g'olibi, SAT fiks narx, 2-farzand..." 
-                defaultValue={tariffEditModal.current_note} 
-                style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }} 
-              />
-
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setTariffEditModal(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
                 <button type="submit" style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: '800' }}>Saqlash</button>
               </div>
