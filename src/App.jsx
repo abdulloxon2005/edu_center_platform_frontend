@@ -21,7 +21,9 @@ function LoadingFallback() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '40px', marginBottom: '10px' }}>⏳</div>
+        <div style={{ marginBottom: '10px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '40px', color: '#4361ee' }}>hourglass_empty</span>
+        </div>
         <p style={{ color: '#6b7280' }}>Yuklanmoqda...</p>
       </div>
     </div>

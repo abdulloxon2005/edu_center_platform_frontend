@@ -22,7 +22,9 @@ class ErrorBoundary extends Component {
           justifyContent: 'center', minHeight: '60vh', padding: '40px',
           textAlign: 'center', fontFamily: 'sans-serif'
         }}>
-          <div style={{ fontSize: '60px', marginBottom: '20px' }}>⚠️</div>
+          <div style={{ marginBottom: '20px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '60px', color: '#dc2626' }}>warning</span>
+          </div>
           <h2 style={{ color: '#dc2626', marginBottom: '10px', fontSize: '24px', fontWeight: '800' }}>Kutilmagan xatolik yuz berdi</h2>
           <p style={{ color: '#64748b', marginBottom: '16px', maxWidth: '500px', fontSize: '14px', lineHeight: '1.6' }}>
             Ilovada xatolik yuz berdi. Iltimos sahifani yangilang yoki quyidagi tugma orqali qayta urinib ko'ring.
@@ -41,10 +43,12 @@ class ErrorBoundary extends Component {
               onClick={() => this.setState({ hasError: false, error: null })}
               style={{
                 padding: '12px 24px', backgroundColor: '#eff6ff', color: '#1d4ed8',
-                border: '1px solid #bfdbfe', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700'
+                border: '1px solid #bfdbfe', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700',
+                display: 'inline-flex', alignItems: 'center', gap: '8px'
               }}
             >
-              🔄 Qayta urinib ko'rish
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>refresh</span>
+              Qayta urinib ko'rish
             </button>
             <button
               onClick={() => window.location.reload()}

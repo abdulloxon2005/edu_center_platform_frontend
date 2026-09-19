@@ -28,7 +28,7 @@ function Navbar() {
       left: 0,
       right: 0,
       zIndex: 1000,
-      padding: '14px 40px',
+      padding: '12px 16px',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -38,19 +38,19 @@ function Navbar() {
       boxShadow: '0 4px 20px rgba(37, 99, 235, 0.08)'
     }}>
       {/* Logo */}
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <img src="/logo.png" alt="Ta'lim Plus Logo" style={{ width: '42px', height: '42px', objectFit: 'contain', borderRadius: '50%', background: '#ffffff', padding: '2px', border: '1px solid #2563eb' }} />
-        <h1 className="gradient-text" style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>
+      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <img src="/logo.png" alt="Ta'lim Plus Logo" style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '50%', background: '#ffffff', padding: '2px', border: '1px solid #2563eb' }} />
+        <h1 className="gradient-text" style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>
           Ta'lim Plus
         </h1>
       </Link>
 
-      {/* Navigation links */}
-      <ul style={{
+      {/* Navigation links - hidden on mobile screens */}
+      <ul className="desktop-only" style={{
         display: 'flex',
-        gap: '35px',
+        gap: '24px',
         fontWeight: '600',
-        fontSize: '15px',
+        fontSize: '14px',
         color: '#0f172a'
       }}>
         <li>
@@ -71,61 +71,60 @@ function Navbar() {
       </ul>
 
       {/* Right Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <a href="tel:+998901234567" style={{ 
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <a href="tel:+998901234567" className="desktop-only" style={{ 
           display: 'flex', 
           alignItems: 'center', 
           gap: '8px', 
           color: '#0f172a',
           fontWeight: '600',
-          fontSize: '14px'
+          fontSize: '13px'
         }}>
           <FiPhoneCall style={{ color: '#2563eb' }} />
           +998 90 123 45 67
         </a>
 
         {token ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Link to={getDashboardPath()} style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
               backgroundColor: '#eff6ff',
               border: '1px solid #bfdbfe',
-              padding: '8px 16px',
+              padding: '6px 12px',
               borderRadius: '50px',
               color: '#1d4ed8',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: '700'
             }}>
               <FiLayout style={{ color: '#2563eb' }} />
-              <span>{fullName}</span>
-              {loginId && <span style={{ color: '#2563eb', fontSize: '11px', fontFamily: 'monospace' }}>({loginId})</span>}
+              <span>{fullName?.split(' ')[0]}</span>
             </Link>
 
             <button 
               onClick={handleLogout}
               style={{
-                backgroundColor: '#f1f5f9',
-                border: '1px solid #cbd5e1',
-                color: '#1e293b',
-                padding: '8px 14px',
+                backgroundColor: '#fee2e2',
+                border: 'none',
+                color: '#dc2626',
+                padding: '6px 10px',
                 borderRadius: '50px',
                 fontWeight: '700',
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '4px'
               }}
             >
-              <FiLogOut /> Chiqish
+              <FiLogOut />
             </button>
           </div>
         ) : (
-          <Link to="/login" className="btn-primary">
-            <FiUser style={{ marginRight: '8px' }} />
-            Tizimga Kirish
+          <Link to="/login" className="btn-primary" style={{ padding: '8px 16px', fontSize: '13px' }}>
+            <FiUser style={{ marginRight: '6px' }} />
+            Kirish
           </Link>
         )}
       </div>

@@ -299,10 +299,10 @@ export default function TeacherDashboard() {
       });
 
       setAttendanceModal(null);
-      triggerNotification(`✅ ${attendances.length} ta o'quvchining davomati saqlandi va Telegram orqali xabar yuborildi!`);
+      triggerNotification(`${attendances.length} ta o'quvchining davomati saqlandi va Telegram orqali xabar yuborildi!`);
     } catch (e) {
       const detail = e.response?.data?.detail || "Davomatni saqlashda xatolik yuz berdi";
-      triggerNotification(`❌ ${detail}`, 'error');
+      triggerNotification(detail, 'error');
     }
   };
 
@@ -410,13 +410,13 @@ export default function TeacherDashboard() {
         attendances: attendances
       });
 
-      triggerNotification(`✅ ${teacherMarkModalLesson.lesson_date} sanasi bo'yicha davomat saqlandi!`);
+      triggerNotification(`${teacherMarkModalLesson.lesson_date} sanasi bo'yicha davomat saqlandi!`);
       setTeacherMarkModalLesson(null);
       const refreshed = await attendanceAPI.getGroupJournal(selectedGroup.id);
       setGroupJournalData(refreshed);
     } catch (err) {
       const detail = err.response?.data?.detail || "Davomatni saqlashda xatolik";
-      triggerNotification(`❌ ${detail}`, 'error');
+      triggerNotification(detail, 'error');
     }
     setTeacherMarkSaving(false);
   };
@@ -440,7 +440,7 @@ export default function TeacherDashboard() {
       }
 
       await homeworkAPI.createHomework(formData);
-      triggerNotification("✅ Yangi uy vazifasi muvaffaqiyatli berildi!");
+      triggerNotification("Yangi uy vazifasi muvaffaqiyatli berildi!");
       setShowAddHomeworkModal(false);
       setNewHwTitle('');
       setNewHwDesc('');
@@ -450,7 +450,7 @@ export default function TeacherDashboard() {
       setGroupHomeworks(Array.isArray(hws) ? hws : []);
     } catch (err) {
       const detail = err.response?.data?.detail || "Vazifa yaratishda xatolik yuz berdi";
-      triggerNotification(`❌ ${detail}`, 'error');
+      triggerNotification(detail, 'error');
     }
     setNewHwSaving(false);
   };
@@ -479,7 +479,7 @@ export default function TeacherDashboard() {
         coins_awarded: parseInt(gradeCoins) || 10,
         feedback: gradeFeedback
       });
-      triggerNotification("✅ Vazifa muvaffaqiyatli baholandi va coinlar berildi!");
+      triggerNotification("Vazifa muvaffaqiyatli baholandi va coinlar berildi!");
       setGradingSubId(null);
       if (activeHwSubmissionsModal) {
         const subs = await homeworkAPI.getHomeworkSubmissions(activeHwSubmissionsModal.id);
@@ -487,7 +487,7 @@ export default function TeacherDashboard() {
       }
     } catch (err) {
       const detail = err.response?.data?.detail || "Baholashda xatolik yuz berdi";
-      triggerNotification(`❌ ${detail}`, 'error');
+      triggerNotification(detail, 'error');
     }
     setGradeSaving(false);
   };
@@ -532,7 +532,7 @@ export default function TeacherDashboard() {
       const res = await analyticsAPI.createExam(payload);
       if (res && res.id) {
         setExams(prev => [res, ...prev]);
-        triggerNotification(`"${newExam.title}" (${newExam.exam_type}) imtihoni muvaffaqiyatli saqlandi! 🎯`);
+        triggerNotification(`"${newExam.title}" (${newExam.exam_type}) imtihoni muvaffaqiyatli saqlandi!`);
       }
       setAddExamModal(false);
       setNewExam({
@@ -547,7 +547,7 @@ export default function TeacherDashboard() {
       });
     } catch (err) {
       const detail = err.response?.data?.detail || "Imtihon yaratishda xatolik yuz berdi";
-      triggerNotification(`❌ ${detail}`, 'error');
+      triggerNotification(detail, 'error');
     }
   };
 
@@ -556,7 +556,7 @@ export default function TeacherDashboard() {
     try {
       const res = await analyticsAPI.startExam(exam.id);
       setExams(prev => prev.map(e => e.id === exam.id ? { ...e, status: 'ACTIVE', started_at: res.started_at } : e));
-      triggerNotification(`🚀 "${exam.title}" imtihoni boshlandi! Taymer ishga tushdi.`);
+      triggerNotification(`"${exam.title}" imtihoni boshlandi! Taymer ishga tushdi.`);
     } catch (err) {
       triggerNotification("Imtihonni boshlashda xatolik yuz berdi", 'error');
     }
@@ -567,7 +567,7 @@ export default function TeacherDashboard() {
     try {
       await analyticsAPI.finishExam(exam.id);
       setExams(prev => prev.map(e => e.id === exam.id ? { ...e, status: 'COMPLETED' } : e));
-      triggerNotification(`⏹️ "${exam.title}" imtihoni yakunlandi! Natijalarni ko'rishingiz mumkin.`);
+      triggerNotification(`"${exam.title}" imtihoni yakunlandi! Natijalarni ko'rishingiz mumkin.`);
     } catch (err) {
       triggerNotification("Imtihonni yakunlashda xatolik yuz berdi", 'error');
     }
@@ -628,13 +628,13 @@ export default function TeacherDashboard() {
         results: resultsPayload
       });
 
-      triggerNotification(`✅ ${res.results_count} ta o'quvchi natijasi saqlandi! (${res.certificates_awarded} ta o'quvchiga sertifikat berildi 🎓)`);
+      triggerNotification(`${res.results_count} ta o'quvchi natijasi saqlandi! (${res.certificates_awarded} ta o'quvchiga sertifikat berildi)`);
       setOfflineResultModal(null);
       const updatedExams = await analyticsAPI.getExams().catch(() => []);
       if (Array.isArray(updatedExams)) setExams(updatedExams);
     } catch (err) {
       const detail = err.response?.data?.detail || "Natijalarni saqlashda xatolik yuz berdi";
-      triggerNotification(`❌ ${detail}`, 'error');
+      triggerNotification(detail, 'error');
     }
     setOfflineSaving(false);
   };
@@ -665,14 +665,14 @@ export default function TeacherDashboard() {
       if (wordCourseId) formData.append('course_id', wordCourseId);
 
       const res = await analyticsAPI.importQuestionsWord(formData);
-      triggerNotification(`✅ ${res.count} ta savol muvaffaqiyatli yuklandi va bankka qo'shildi!`);
+      triggerNotification(`${res.count} ta savol muvaffaqiyatli yuklandi va bankka qo'shildi!`);
       const qList = await analyticsAPI.getQuestions();
       setQuestions(qList);
       setWordFile(null);
       setQBankTab('list');
     } catch (err) {
       const detail = err.response?.data?.detail || "Faylni yuklashda xatolik yuz berdi";
-      triggerNotification(`❌ ${detail}`, 'error');
+      triggerNotification(detail, 'error');
     }
     setImportingLoading(false);
   };
@@ -686,14 +686,14 @@ export default function TeacherDashboard() {
     setImportingLoading(true);
     try {
       const res = await analyticsAPI.importQuestionsText(rawTextImport, rawTextCourseId ? parseInt(rawTextCourseId) : null);
-      triggerNotification(`✅ ${res.count} ta test savoli muvaffaqiyatli saqlandi!`);
+      triggerNotification(`${res.count} ta test savoli muvaffaqiyatli saqlandi!`);
       const qList = await analyticsAPI.getQuestions();
       setQuestions(qList);
       setRawTextImport('');
       setQBankTab('list');
     } catch (err) {
       const detail = err.response?.data?.detail || "Matndan yuklashda xatolik yuz berdi";
-      triggerNotification(`❌ ${detail}`, 'error');
+      triggerNotification(detail, 'error');
     }
     setImportingLoading(false);
   };
@@ -746,7 +746,7 @@ export default function TeacherDashboard() {
   const navigationItems = [
     { id: 'dashboard', label: 'Asosiy', icon: 'dashboard', fullLabel: 'Dashboard' },
     { id: 'groups', label: 'Guruhlar', icon: 'groups', fullLabel: 'Guruhlarim', badge: myGroups.length > 0 ? myGroups.length : null },
-    { id: 'exams', label: 'Imtihonlar', icon: 'quiz', fullLabel: 'Imtihonlar & Testlar', badge: exams.filter(e => e.status === 'ACTIVE').length > 0 ? '⚡' : null },
+    { id: 'exams', label: 'Imtihonlar', icon: 'quiz', fullLabel: 'Imtihonlar & Testlar', badge: exams.filter(e => e.status === 'ACTIVE').length > 0 ? exams.filter(e => e.status === 'ACTIVE').length : null },
     { id: 'profile', label: 'Profil', icon: 'person', fullLabel: 'Mening Profilim' },
   ];
 
@@ -806,7 +806,7 @@ export default function TeacherDashboard() {
               {!sidebarCollapsed && !isTablet && (
                 <div style={{ overflow: 'hidden' }}>
                   <h1 style={{ fontSize: '17px', fontWeight: '900', color: '#0f172a', margin: 0, whiteSpace: 'nowrap' }}>Ta'lim Plus</h1>
-                  <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: '800' }}>Teacher Panel 👨‍🏫</span>
+                  <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: '800' }}>Teacher Panel</span>
                 </div>
               )}
             </div>
@@ -950,7 +950,7 @@ export default function TeacherDashboard() {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '11px', fontWeight: '800', backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '4px 8px', borderRadius: '50px' }}>
-                  📅 {new Date().toLocaleDateString('uz-UZ')}
+                  {new Date().toLocaleDateString('uz-UZ')}
                 </span>
                 <button 
                   onClick={handleLogout}
@@ -974,7 +974,7 @@ export default function TeacherDashboard() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ fontSize: '12px', fontWeight: '700', backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '6px 12px', borderRadius: '50px' }}>
-                  📅 {new Date().toLocaleDateString('uz-UZ')}
+                  {new Date().toLocaleDateString('uz-UZ')}
                 </span>
               </div>
             </>
@@ -1050,7 +1050,7 @@ export default function TeacherDashboard() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <h3 style={{ fontSize: isMobile ? '15px' : '17px', fontWeight: '900', margin: 0, color: '#0f172a' }}>
-                      📅 Dars Jadvali & Guruhlar
+                      Dars Jadvali & Guruhlar
                     </h3>
                     <button 
                       onClick={() => {
@@ -1083,7 +1083,7 @@ export default function TeacherDashboard() {
                             {g.name}
                           </p>
                           <p style={{ margin: '3px 0 0', fontSize: isMobile ? '11px' : '12px', color: '#475569', lineHeight: '1.3' }}>
-                            📍 {g.roomName} • 🕒 {g.start_time}-{g.end_time} ({g.days_of_week})
+                            {g.roomName} • {g.start_time}-{g.end_time} ({g.days_of_week})
                           </p>
                         </div>
                         <button 
@@ -1125,7 +1125,7 @@ export default function TeacherDashboard() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <h3 style={{ fontSize: isMobile ? '15px' : '17px', fontWeight: '900', margin: 0, color: '#0f172a' }}>
-                      📝 Imtihonlar
+                      Imtihonlar
                     </h3>
                     <button 
                       onClick={() => {
@@ -1157,12 +1157,12 @@ export default function TeacherDashboard() {
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 6px', borderRadius: '6px', backgroundColor: e.exam_type === 'ONLINE' ? '#eff6ff' : '#f5f3ff', color: e.exam_type === 'ONLINE' ? '#1d4ed8' : '#7c3aed' }}>
-                              {e.exam_type === 'ONLINE' ? '🌐 Online' : '📝 Offline'}
+                              {e.exam_type === 'ONLINE' ? 'Online' : 'Offline'}
                             </span>
                             <p style={{ margin: 0, fontWeight: '800', color: '#0f172a', fontSize: isMobile ? '13px' : '14px' }}>{e.title}</p>
                           </div>
                           <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#475569' }}>
-                            📅 {e.exam_date} • 🎯 Max: {e.max_score} | O'tish: {e.pass_score || 70}+
+                            {e.exam_date} • Max: {e.max_score} | O'tish: {e.pass_score || 70}+
                           </p>
                         </div>
                         <button 
@@ -1243,7 +1243,7 @@ export default function TeacherDashboard() {
                             {g.name}
                           </h4>
                           <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
-                            👥 {g.studentsList?.length || 0} ta o'quvchi • 🕒 {g.start_time}-{g.end_time} ({g.days_of_week})
+                            {g.studentsList?.length || 0} ta o'quvchi • {g.start_time}-{g.end_time} ({g.days_of_week})
                           </p>
                         </div>
 
@@ -1313,7 +1313,7 @@ export default function TeacherDashboard() {
                             {selectedGroup.courseName}
                           </span>
                           <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700' }}>
-                            📍 {selectedGroup.roomName} • 🕒 {selectedGroup.start_time}-{selectedGroup.end_time}
+                            {selectedGroup.roomName} • {selectedGroup.start_time}-{selectedGroup.end_time}
                           </span>
                         </div>
                         <h3 style={{ margin: '2px 0 0', fontSize: isMobile ? '17px' : '20px', fontWeight: '900', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1324,7 +1324,7 @@ export default function TeacherDashboard() {
 
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <span style={{ fontSize: '11px', fontWeight: '800', backgroundColor: '#dcfce7', color: '#166534', padding: '4px 10px', borderRadius: '50px' }}>
-                        👥 {selectedGroup.studentsList?.length || 0} ta o'quvchi
+                        {selectedGroup.studentsList?.length || 0} ta o'quvchi
                       </span>
                     </div>
                   </div>
@@ -1428,8 +1428,8 @@ export default function TeacherDashboard() {
                                   <span style={{ fontSize: '11px', fontWeight: '800', color: '#2563eb' }}>ID: {s.login_id}</span>
                                 </div>
                                 <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                  {s.phone && <div>📞 {s.phone}</div>}
-                                  {s.parent_phone && <div>👪 Ota-ona: {s.parent_phone}</div>}
+                                  {s.phone && <div>Tel: {s.phone}</div>}
+                                  {s.parent_phone && <div>Ota-ona: {s.parent_phone}</div>}
                                 </div>
                               </div>
                             ))}
@@ -1463,7 +1463,7 @@ export default function TeacherDashboard() {
                                     </td>
                                     <td style={{ padding: '10px 14px' }}>
                                       {s.telegram_chat_id ? (
-                                        <span style={{ fontSize: '11px', backgroundColor: '#e0f2fe', color: '#0284c7', padding: '2px 8px', borderRadius: '6px', fontWeight: '800' }}>Ulangan 📲</span>
+                                        <span style={{ fontSize: '11px', backgroundColor: '#e0f2fe', color: '#0284c7', padding: '2px 8px', borderRadius: '6px', fontWeight: '800' }}>Ulangan</span>
                                       ) : (
                                         <span style={{ fontSize: '11px', color: '#94a3b8' }}>Ulanmagan</span>
                                       )}
@@ -1513,7 +1513,7 @@ export default function TeacherDashboard() {
                           }}
                           style={{ padding: '6px 12px', borderRadius: '10px', border: '1px solid #86efac', backgroundColor: '#dcfce7', color: '#166534', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}
                         >
-                          ✅ Hammasini "Keldi"
+                          Hammasini "Keldi"
                         </button>
                       </div>
 
@@ -1560,7 +1560,7 @@ export default function TeacherDashboard() {
                                     <span style={{ fontWeight: '800', color: '#0f172a', fontSize: isMobile ? '13px' : '14px' }}>{s.full_name}</span>
                                     <span style={{ marginLeft: '6px', fontSize: '11px', color: '#2563eb', fontWeight: '700' }}>ID: {s.login_id}</span>
                                     {s.telegram_chat_id && (
-                                      <span style={{ marginLeft: '6px', fontSize: '10px', backgroundColor: '#e0f2fe', color: '#0284c7', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>TG 📲</span>
+                                      <span style={{ marginLeft: '6px', fontSize: '10px', backgroundColor: '#e0f2fe', color: '#0284c7', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>TG</span>
                                     )}
                                   </div>
                                   
@@ -1571,28 +1571,28 @@ export default function TeacherDashboard() {
                                       onClick={() => handleMarkAttendance(s.id, 'PRESENT')} 
                                       style={{ padding: '6px 8px', borderRadius: '8px', border: status === 'PRESENT' ? '1.5px solid #16a34a' : '1px solid #e2e8f0', backgroundColor: status === 'PRESENT' ? '#dcfce7' : '#ffffff', color: status === 'PRESENT' ? '#166534' : '#64748b', fontWeight: '800', cursor: 'pointer', fontSize: isMobile ? '11px' : '12px', textAlign: 'center' }}
                                     >
-                                      ✓ Keldi
+                                      Keldi
                                     </button>
                                     <button 
                                       type="button"
                                       onClick={() => handleMarkAttendance(s.id, 'LATE')} 
                                       style={{ padding: '6px 8px', borderRadius: '8px', border: status === 'LATE' ? '1.5px solid #d97706' : '1px solid #e2e8f0', backgroundColor: status === 'LATE' ? '#fef3c7' : '#ffffff', color: status === 'LATE' ? '#b45309' : '#64748b', fontWeight: '800', cursor: 'pointer', fontSize: isMobile ? '11px' : '12px', textAlign: 'center' }}
                                     >
-                                      🕒 Kechikdi
+                                      Kechikdi
                                     </button>
                                     <button 
                                       type="button"
                                       onClick={() => handleMarkAttendance(s.id, 'ABSENT')} 
                                       style={{ padding: '6px 8px', borderRadius: '8px', border: status === 'ABSENT' ? '1.5px solid #dc2626' : '1px solid #e2e8f0', backgroundColor: status === 'ABSENT' ? '#fee2e2' : '#ffffff', color: status === 'ABSENT' ? '#991b1b' : '#64748b', fontWeight: '800', cursor: 'pointer', fontSize: isMobile ? '11px' : '12px', textAlign: 'center' }}
                                     >
-                                      ✕ Kelmadi
+                                      Kelmadi
                                     </button>
                                     <button 
                                       type="button"
                                       onClick={() => handleMarkAttendance(s.id, 'EXCUSED')} 
                                       style={{ padding: '6px 8px', borderRadius: '8px', border: status === 'EXCUSED' ? '1.5px solid #2563eb' : '1px solid #e2e8f0', backgroundColor: status === 'EXCUSED' ? '#eff6ff' : '#ffffff', color: status === 'EXCUSED' ? '#1d4ed8' : '#64748b', fontWeight: '800', cursor: 'pointer', fontSize: isMobile ? '11px' : '12px', textAlign: 'center' }}
                                     >
-                                      📋 Sababli
+                                      Sababli
                                     </button>
                                   </div>
                                 </div>
@@ -1631,11 +1631,11 @@ export default function TeacherDashboard() {
                                 lesson_id: lesson.id,
                                 attendances: attendances
                               });
-                              triggerNotification(`✅ ${attendances.length} ta o'quvchining davomati saqlandi va Telegram orqali xabar yuborildi!`);
+                              triggerNotification(`${attendances.length} ta o'quvchining davomati saqlandi va Telegram orqali xabar yuborildi!`);
                               loadGroupSubTabData(selectedGroup, 'matrix');
                             } catch (err) {
                               const detail = err.response?.data?.detail || "Davomatni saqlashda xatolik";
-                              triggerNotification(`❌ ${detail}`, 'error');
+                              triggerNotification(detail, 'error');
                             }
                           }}
                           disabled={attendanceStudents.length === 0}
@@ -1652,7 +1652,7 @@ export default function TeacherDashboard() {
                             boxShadow: '0 4px 14px rgba(37,99,235,0.2)'
                           }}
                         >
-                          💾 Davomatni Saqlash & Xabar Yuborish
+                          Davomatni Saqlash & Xabar Yuborish
                         </button>
                       </div>
                     </div>
@@ -1684,10 +1684,10 @@ export default function TeacherDashboard() {
                       {/* LEGEND */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#f8fafc', padding: '8px 12px', borderRadius: '12px', border: '1px solid #eff6ff', fontSize: '11px', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: '800', color: '#475569' }}>Belgilar:</span>
-                        <span style={{ color: '#166534', fontWeight: '700' }}>✓ Keldi</span>
-                        <span style={{ color: '#991b1b', fontWeight: '700' }}>✕ Kelmadi</span>
-                        <span style={{ color: '#b45309', fontWeight: '700' }}>🕒 Kechikdi</span>
-                        <span style={{ color: '#1d4ed8', fontWeight: '700' }}>📋 Sababli</span>
+                        <span style={{ color: '#166534', fontWeight: '700' }}>Keldi</span>
+                        <span style={{ color: '#991b1b', fontWeight: '700' }}>Kelmadi</span>
+                        <span style={{ color: '#b45309', fontWeight: '700' }}>Kechikdi</span>
+                        <span style={{ color: '#1d4ed8', fontWeight: '700' }}>Sababli</span>
                       </div>
 
                       {groupJournalLoading ? (
@@ -1712,10 +1712,10 @@ export default function TeacherDashboard() {
                                     <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', marginTop: '3px' }}>
                                       <button 
                                         onClick={() => handleOpenTeacherMarkModal(lesson)}
-                                        style={{ padding: '2px 5px', borderRadius: '4px', border: '1px solid #bfdbfe', backgroundColor: '#ffffff', color: '#2563eb', fontSize: '9px', fontWeight: '800', cursor: 'pointer' }}
+                                        style={{ padding: '2px 5px', borderRadius: '4px', border: '1px solid #bfdbfe', backgroundColor: '#ffffff', color: '#2563eb', fontSize: '11px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                         title="Tahrirlash"
                                       >
-                                        ✏️
+                                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>edit</span>
                                       </button>
                                       <button 
                                         onClick={async () => {
@@ -1729,10 +1729,10 @@ export default function TeacherDashboard() {
                                             triggerNotification("O'chirishda xatolik", 'error');
                                           }
                                         }}
-                                        style={{ padding: '2px 5px', borderRadius: '4px', border: '1px solid #fee2e2', backgroundColor: '#ffffff', color: '#dc2626', fontSize: '9px', fontWeight: '800', cursor: 'pointer' }}
+                                        style={{ padding: '2px 5px', borderRadius: '4px', border: '1px solid #fee2e2', backgroundColor: '#ffffff', color: '#dc2626', fontSize: '11px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                         title="O'chirish"
                                       >
-                                        🗑️
+                                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
                                       </button>
                                     </div>
                                   </th>
@@ -1765,10 +1765,10 @@ export default function TeacherDashboard() {
 
                                       return (
                                         <td key={lesson.id} style={{ padding: '6px', borderRight: '1px solid #eff6ff' }}>
-                                          {status === 'PRESENT' && <span style={{ color: '#166534', fontWeight: '900' }}>✓</span>}
-                                          {status === 'ABSENT' && <span style={{ color: '#dc2626', fontWeight: '900' }}>✕</span>}
-                                          {status === 'LATE' && <span style={{ color: '#d97706', fontWeight: '900' }}>🕒</span>}
-                                          {status === 'EXCUSED' && <span style={{ color: '#2563eb', fontWeight: '900' }}>📋</span>}
+                                          {status === 'PRESENT' && <span style={{ color: '#166534', fontWeight: '900' }}>K</span>}
+                                          {status === 'ABSENT' && <span style={{ color: '#dc2626', fontWeight: '900' }}>Q</span>}
+                                          {status === 'LATE' && <span style={{ color: '#d97706', fontWeight: '900' }}>Kch</span>}
+                                          {status === 'EXCUSED' && <span style={{ color: '#2563eb', fontWeight: '900' }}>S</span>}
                                           {!status && <span style={{ color: '#cbd5e1' }}>—</span>}
                                         </td>
                                       );
@@ -1822,10 +1822,10 @@ export default function TeacherDashboard() {
                               <div style={{ flex: 1, minWidth: isMobile ? '100%' : '200px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                                   <span style={{ fontSize: '10px', backgroundColor: '#fef3c7', color: '#b45309', fontWeight: '800', padding: '2px 6px', borderRadius: '4px' }}>
-                                    🪙 Max: {hw.max_coins} coin
+                                    Max: {hw.max_coins} coin
                                   </span>
                                   <span style={{ fontSize: '11px', color: '#64748b' }}>
-                                    📅 {hw.created_at?.split('T')[0]}
+                                    {hw.created_at?.split('T')[0]}
                                   </span>
                                 </div>
                                 <h4 style={{ margin: 0, fontSize: isMobile ? '14px' : '15px', fontWeight: '900', color: '#0f172a' }}>{hw.title}</h4>
@@ -1912,7 +1912,7 @@ export default function TeacherDashboard() {
                                     {s.full_name} <span style={{ color: '#2563eb', fontSize: '11px' }}>(ID: {s.login_id})</span>
                                   </p>
                                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>
-                                    📞 {s.phone || 'Tel raqam yo\'q'}
+                                    Tel: {s.phone || 'yo\'q'}
                                   </p>
                                 </div>
 
@@ -1923,7 +1923,7 @@ export default function TeacherDashboard() {
                                     color: isPaid ? '#166534' : isPartial ? '#b45309' : '#991b1b',
                                     display: 'inline-block', marginBottom: '2px'
                                   }}>
-                                    {isPaid ? "To'langan ✓" : isPartial ? "Qisman ⚠️" : "To'lanmagan ✕"}
+                                    {isPaid ? "To'langan" : isPartial ? "Qisman" : "To'lanmagan"}
                                   </span>
                                   
                                   <p style={{ margin: 0, fontSize: '13px', fontWeight: '900', color: isPaid ? '#166534' : isPartial ? '#b45309' : '#dc2626' }}>
@@ -1983,7 +1983,7 @@ export default function TeacherDashboard() {
               {/* ACTIVE EXAMS BANNER */}
               {exams.some(e => e.status === 'ACTIVE') && (
                 <div style={{ padding: '12px 16px', backgroundColor: '#eff6ff', border: '2px solid #2563eb', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '24px' }}>⏳</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#2563eb' }}>hourglass_empty</span>
                   <div>
                     <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '900', color: '#1e3a8a' }}>Faol Imtihon Davom Etmoqda!</h4>
                     <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#3b82f6', fontWeight: '700' }}>O'quvchilar test topshirmoqda</p>
@@ -2003,7 +2003,7 @@ export default function TeacherDashboard() {
                       <div key={e.id} style={{ backgroundColor: '#ffffff', border: '1.5px solid #bfdbfe', borderRadius: '16px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 6px', borderRadius: '6px', backgroundColor: isOnline ? '#eff6ff' : '#f5f3ff', color: isOnline ? '#1d4ed8' : '#7c3aed' }}>
-                            {isOnline ? '🌐 Online' : '📝 Offline'}
+                            {isOnline ? 'Online' : 'Offline'}
                           </span>
                           <span style={{
                             fontSize: '10px', fontWeight: '800', padding: '2px 8px', borderRadius: '50px',
@@ -2016,8 +2016,8 @@ export default function TeacherDashboard() {
 
                         <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '900', color: '#0f172a' }}>{e.title}</h4>
                         <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div>👥 {e.group_name || `Guruh #${e.group_id}`} • 📅 {e.exam_date}</div>
-                          <div>🎯 Max: {e.max_score} ball | 🎓 O'tish: {e.pass_score || 70}+ ball</div>
+                          <div>{e.group_name || `Guruh #${e.group_id}`} • {e.exam_date}</div>
+                          <div>Max: {e.max_score} ball | O'tish: {e.pass_score || 70}+ ball</div>
                         </div>
 
                         <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
@@ -2026,7 +2026,7 @@ export default function TeacherDashboard() {
                               onClick={() => handleStartExam(e)}
                               style={{ flex: 1, padding: '6px', borderRadius: '8px', border: 'none', backgroundColor: '#2563eb', color: '#fff', fontWeight: '800', fontSize: '11px', cursor: 'pointer' }}
                             >
-                              ▶️ Boshlash
+                              Boshlash
                             </button>
                           )}
                           {isActive && (
@@ -2034,7 +2034,7 @@ export default function TeacherDashboard() {
                               onClick={() => handleFinishExam(e)}
                               style={{ flex: 1, padding: '6px', borderRadius: '8px', border: 'none', backgroundColor: '#dc2626', color: '#fff', fontWeight: '800', fontSize: '11px', cursor: 'pointer' }}
                             >
-                              ⏹️ Yakunlash
+                              Yakunlash
                             </button>
                           )}
                           {!isOnline && (
@@ -2042,20 +2042,20 @@ export default function TeacherDashboard() {
                               onClick={() => handleOpenOfflineResults(e)}
                               style={{ flex: 1, padding: '6px', borderRadius: '8px', border: '1px solid #7c3aed', backgroundColor: '#f5f3ff', color: '#7c3aed', fontWeight: '800', fontSize: '11px', cursor: 'pointer' }}
                             >
-                              ✏️ Natija kiritish
+                              Natija kiritish
                             </button>
                           )}
                           <button 
                             onClick={() => handleOpenViewResults(e)}
                             style={{ flex: 1, padding: '6px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', fontSize: '11px', cursor: 'pointer' }}
                           >
-                            📊 Natijalar
+                            Natijalar
                           </button>
                           <button 
                             onClick={() => handleDeleteExam(e.id)}
-                            style={{ padding: '6px 10px', borderRadius: '8px', border: 'none', backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: '800', fontSize: '11px', cursor: 'pointer' }}
+                            style={{ padding: '6px 10px', borderRadius: '8px', border: 'none', backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: '800', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           >
-                            🗑️
+                            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>delete</span>
                           </button>
                         </div>
                       </div>
@@ -2091,17 +2091,17 @@ export default function TeacherDashboard() {
                             <td style={{ padding: '12px 16px', fontWeight: '800', color: '#0f172a' }}>{e.title}</td>
                             <td style={{ padding: '12px 16px' }}>
                               <span style={{ fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '6px', backgroundColor: isOnline ? '#eff6ff' : '#f5f3ff', color: isOnline ? '#1d4ed8' : '#7c3aed' }}>
-                                {isOnline ? '🌐 Online' : '📝 Offline'}
+                                {isOnline ? 'Online' : 'Offline'}
                               </span>
                             </td>
                             <td style={{ padding: '12px 16px', color: '#2563eb', fontWeight: '700' }}>{e.group_name || `Guruh #${e.group_id}`}</td>
                             <td style={{ padding: '12px 16px', color: '#475569' }}>
-                              <div>📅 {e.exam_date}</div>
-                              <div style={{ fontSize: '11px', color: '#64748b' }}>⏱️ {e.duration_minutes || 30} daqiqa</div>
+                              <div>{e.exam_date}</div>
+                              <div style={{ fontSize: '11px', color: '#64748b' }}>{e.duration_minutes || 30} daqiqa</div>
                             </td>
                             <td style={{ padding: '12px 16px' }}>
                               <div>Max: <strong>{e.max_score}</strong></div>
-                              <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: '700' }}>🎓 {e.pass_score || 70}+ ball</div>
+                              <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: '700' }}>O'tish: {e.pass_score || 70}+ ball</div>
                             </td>
                             <td style={{ padding: '12px 16px' }}>
                               <span style={{
@@ -2371,7 +2371,7 @@ export default function TeacherDashboard() {
                       fontWeight: '800', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
                     }}
                   >
-                    🌐 Online (Test)
+                    Online (Test)
                   </button>
                   <button
                     type="button"
@@ -2383,7 +2383,7 @@ export default function TeacherDashboard() {
                       fontWeight: '800', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
                     }}
                   >
-                    📝 Offline (Yozma)
+                    Offline (Yozma)
                   </button>
                 </div>
               </div>
@@ -2417,7 +2417,7 @@ export default function TeacherDashboard() {
                   <input required type="number" min="1" value={newExam.max_score} onChange={e => setNewExam({...newExam, max_score: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '10px', border: '1px solid #bfdbfe', fontSize: '12px' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', fontWeight: '700', color: '#16a34a', marginBottom: '2px', display: 'block' }}>🎓 O'tish bali</label>
+                  <label style={{ fontSize: '10px', fontWeight: '700', color: '#16a34a', marginBottom: '2px', display: 'block' }}>O'tish bali</label>
                   <input required type="number" min="1" value={newExam.pass_score} onChange={e => setNewExam({...newExam, pass_score: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '10px', border: '1px solid #86efac', backgroundColor: '#f0fdf4', fontSize: '12px' }} />
                 </div>
               </div>
@@ -2462,7 +2462,7 @@ export default function TeacherDashboard() {
                           />
                           <div>
                             <span style={{ fontWeight: '800', color: '#0f172a' }}>{idx + 1}. {q.question_text}</span>
-                            <span style={{ display: 'block', color: '#16a34a', fontSize: '10px' }}>✓ {q.correct_answer}</span>
+                            <span style={{ display: 'block', color: '#16a34a', fontSize: '10px' }}>{q.correct_answer}</span>
                           </div>
                         </label>
                       );
@@ -2481,7 +2481,7 @@ export default function TeacherDashboard() {
                   Bekor qilish
                 </button>
                 <button type="submit" style={{ flex: 1.5, padding: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', fontSize: '12px', cursor: 'pointer' }}>
-                  💾 Saqlash
+                  Saqlash
                 </button>
               </div>
             </form>
@@ -2529,7 +2529,7 @@ export default function TeacherDashboard() {
                   <input type="file" accept=".docx" onChange={e => setWordFile(e.target.files[0])} required style={{ fontSize: '12px' }} />
                 </div>
                 <button type="submit" disabled={importingLoading} style={{ padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', cursor: 'pointer', fontSize: '13px' }}>
-                  {importingLoading ? 'Yuklanmoqda...' : '📥 Word fayldan yuklash'}
+                  {importingLoading ? 'Yuklanmoqda...' : 'Word fayldan yuklash'}
                 </button>
               </form>
             )}
@@ -2545,7 +2545,7 @@ export default function TeacherDashboard() {
                   style={{ width: '100%', height: '140px', padding: '10px', borderRadius: '10px', border: '1px solid #bfdbfe', fontFamily: 'monospace', fontSize: '12px', backgroundColor: '#f8fafc' }} 
                 />
                 <button type="submit" disabled={importingLoading} style={{ padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', cursor: 'pointer', fontSize: '13px' }}>
-                  {importingLoading ? 'Yuklanmoqda...' : '📥 Matndan saqlash'}
+                  {importingLoading ? 'Yuklanmoqda...' : 'Matndan saqlash'}
                 </button>
               </form>
             )}
@@ -2567,7 +2567,7 @@ export default function TeacherDashboard() {
                   <option value="D">D varianti to'g'ri</option>
                 </select>
                 <button type="submit" style={{ padding: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', cursor: 'pointer', fontSize: '12px' }}>
-                  💾 Savolni Saqlash
+                  Savolni Saqlash
                 </button>
               </form>
             )}
@@ -2640,7 +2640,7 @@ export default function TeacherDashboard() {
                 Bekor qilish
               </button>
               <button type="button" onClick={handleSaveOfflineResults} disabled={offlineSaving} style={{ flex: 1.5, padding: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', fontSize: '12px', cursor: 'pointer' }}>
-                {offlineSaving ? 'Saqlanmoqda...' : '💾 Natijalarni Saqlash'}
+                {offlineSaving ? 'Saqlanmoqda...' : 'Natijalarni Saqlash'}
               </button>
             </div>
           </div>
@@ -2668,11 +2668,11 @@ export default function TeacherDashboard() {
                   <div key={r.id} style={{ padding: '10px 12px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #eff6ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <p style={{ margin: 0, fontWeight: '800', color: '#0f172a', fontSize: '13px' }}>{r.student_name}</p>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>{r.percentage}% • {r.is_passed ? "O'tdi ✓" : "O'tmadi ✕"}</span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>{r.percentage}% • {r.is_passed ? "O'tdi" : "O'tmadi"}</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <span style={{ fontSize: '14px', fontWeight: '900', color: '#2563eb' }}>{r.score} ball</span>
-                      {r.certificate_code && <div style={{ fontSize: '10px', color: '#15803d', fontWeight: '800' }}>🎓 {r.certificate_code}</div>}
+                      {r.certificate_code && <div style={{ fontSize: '10px', color: '#15803d', fontWeight: '800' }}>Sertifikat: {r.certificate_code}</div>}
                     </div>
                   </div>
                 ))}
@@ -2724,7 +2724,7 @@ export default function TeacherDashboard() {
                   Bekor qilish
                 </button>
                 <button type="submit" disabled={newHwSaving} style={{ flex: 1.5, padding: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', fontSize: '12px', cursor: 'pointer' }}>
-                  {newHwSaving ? 'Yuborilmoqda...' : '🚀 Yuborish'}
+                  {newHwSaving ? 'Yuborilmoqda...' : 'Yuborish'}
                 </button>
               </div>
             </form>
@@ -2762,7 +2762,7 @@ export default function TeacherDashboard() {
                           <span style={{ fontSize: '11px', color: '#64748b' }}>ID: {sub.student_login_id}</span>
                         </div>
                         <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 6px', borderRadius: '6px', backgroundColor: isGraded ? '#dcfce7' : '#fef3c7', color: isGraded ? '#166534' : '#b45309' }}>
-                          {isGraded ? `Baholangan (${sub.grade} b / +${sub.coins_awarded} 🪙)` : 'Kutilmoqda'}
+                          {isGraded ? `Baholangan (${sub.grade} ball / +${sub.coins_awarded} coin)` : 'Kutilmoqda'}
                         </span>
                       </div>
 
@@ -2806,7 +2806,7 @@ export default function TeacherDashboard() {
                               Bekor
                             </button>
                             <button onClick={() => handleGradeSubmission(sub.id)} disabled={gradeSaving} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', backgroundColor: '#16a34a', color: '#ffffff', fontSize: '11px', fontWeight: '900', cursor: 'pointer' }}>
-                              {gradeSaving ? 'Saqlanmoqda...' : '💾 Saqlash'}
+                              {gradeSaving ? 'Saqlanmoqda...' : 'Saqlash'}
                             </button>
                           </div>
                         </div>
@@ -2843,10 +2843,10 @@ export default function TeacherDashboard() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                         <span style={{ fontWeight: '800', color: '#0f172a', fontSize: '13px' }}>{s.full_name}</span>
                         <div style={{ display: 'flex', gap: '4px' }}>
-                          <button type="button" onClick={() => setTeacherMarkStatusMap({...teacherMarkStatusMap, [s.id]: 'PRESENT'})} style={{ padding: '4px 8px', borderRadius: '6px', border: status === 'PRESENT' ? '1.5px solid #16a34a' : '1px solid #e2e8f0', backgroundColor: status === 'PRESENT' ? '#dcfce7' : '#fff', color: status === 'PRESENT' ? '#166534' : '#64748b', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>✓</button>
-                          <button type="button" onClick={() => setTeacherMarkStatusMap({...teacherMarkStatusMap, [s.id]: 'LATE'})} style={{ padding: '4px 8px', borderRadius: '6px', border: status === 'LATE' ? '1.5px solid #d97706' : '1px solid #e2e8f0', backgroundColor: status === 'LATE' ? '#fef3c7' : '#fff', color: status === 'LATE' ? '#b45309' : '#64748b', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>🕒</button>
-                          <button type="button" onClick={() => setTeacherMarkStatusMap({...teacherMarkStatusMap, [s.id]: 'ABSENT'})} style={{ padding: '4px 8px', borderRadius: '6px', border: status === 'ABSENT' ? '1.5px solid #dc2626' : '1px solid #e2e8f0', backgroundColor: status === 'ABSENT' ? '#fee2e2' : '#fff', color: status === 'ABSENT' ? '#991b1b' : '#64748b', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>✕</button>
-                          <button type="button" onClick={() => setTeacherMarkStatusMap({...teacherMarkStatusMap, [s.id]: 'EXCUSED'})} style={{ padding: '4px 8px', borderRadius: '6px', border: status === 'EXCUSED' ? '1.5px solid #2563eb' : '1px solid #e2e8f0', backgroundColor: status === 'EXCUSED' ? '#eff6ff' : '#fff', color: status === 'EXCUSED' ? '#1d4ed8' : '#64748b', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>📋</button>
+                          <button type="button" onClick={() => setTeacherMarkStatusMap({...teacherMarkStatusMap, [s.id]: 'PRESENT'})} style={{ padding: '4px 8px', borderRadius: '6px', border: status === 'PRESENT' ? '1.5px solid #16a34a' : '1px solid #e2e8f0', backgroundColor: status === 'PRESENT' ? '#dcfce7' : '#fff', color: status === 'PRESENT' ? '#166534' : '#64748b', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>Keldi</button>
+                          <button type="button" onClick={() => setTeacherMarkStatusMap({...teacherMarkStatusMap, [s.id]: 'LATE'})} style={{ padding: '4px 8px', borderRadius: '6px', border: status === 'LATE' ? '1.5px solid #d97706' : '1px solid #e2e8f0', backgroundColor: status === 'LATE' ? '#fef3c7' : '#fff', color: status === 'LATE' ? '#b45309' : '#64748b', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>Kechikdi</button>
+                          <button type="button" onClick={() => setTeacherMarkStatusMap({...teacherMarkStatusMap, [s.id]: 'ABSENT'})} style={{ padding: '4px 8px', borderRadius: '6px', border: status === 'ABSENT' ? '1.5px solid #dc2626' : '1px solid #e2e8f0', backgroundColor: status === 'ABSENT' ? '#fee2e2' : '#fff', color: status === 'ABSENT' ? '#991b1b' : '#64748b', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>Kelmadi</button>
+                          <button type="button" onClick={() => setTeacherMarkStatusMap({...teacherMarkStatusMap, [s.id]: 'EXCUSED'})} style={{ padding: '4px 8px', borderRadius: '6px', border: status === 'EXCUSED' ? '1.5px solid #2563eb' : '1px solid #e2e8f0', backgroundColor: status === 'EXCUSED' ? '#eff6ff' : '#fff', color: status === 'EXCUSED' ? '#1d4ed8' : '#64748b', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>Sababli</button>
                         </div>
                       </div>
                     </div>
@@ -2859,7 +2859,7 @@ export default function TeacherDashboard() {
                   Bekor
                 </button>
                 <button type="submit" disabled={teacherMarkSaving} style={{ flex: 1.5, padding: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', fontSize: '12px', cursor: 'pointer' }}>
-                  {teacherMarkSaving ? 'Saqlanmoqda...' : '💾 Saqlash'}
+                  {teacherMarkSaving ? 'Saqlanmoqda...' : 'Saqlash'}
                 </button>
               </div>
             </form>

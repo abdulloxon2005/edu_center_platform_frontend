@@ -7,8 +7,8 @@ export default function TelegramBotSimulator() {
     {
       id: 1,
       sender: 'bot',
-      text: "Assalomu alaykum! Ta'lim Plus Education Center rasmiy Telegram Botiga xush kelibsiz! 🤖\n\nIltimos, botdan foydalanish uchun rolingizni tanlang va telefon raqamingizni tasdiqlang:",
-      buttons: ['📲 Telefon Raqamni Ulash (Share Contact)', '👨‍👩‍👧 Men Ota-onaman', '🎓 Men Studentman']
+      text: "Assalomu alaykum! Ta'lim Plus Education Center rasmiy Telegram Botiga xush kelibsiz!\n\nIltimos, botdan foydalanish uchun rolingizni tanlang va telefon raqamingizni tasdiqlang:",
+      buttons: ['Telefon Raqamni Ulash (Share Contact)', 'Men Ota-onaman', 'Men Studentman']
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -33,41 +33,41 @@ export default function TelegramBotSimulator() {
 
     setTimeout(() => {
       if (btnText.includes('Share Contact') || btnText.includes('Ulash')) {
-        addBotMessage("✅ Telefon raqamingiz muvaffaqiyatli tasdiqlandi!\n\nAkkountingiz 3 ta farzandingiz (Ali, Madina, Hasan) bilan avtomatik bog'landi! 👦", [
-          '👦 Farzandim', '📅 Dars Jadvali', '✅ Davomat', '📝 Uy Vazifalari', '📊 Natijalar', '💰 To\'lovlar', '❓ Yordam'
+        addBotMessage("Telefon raqamingiz muvaffaqiyatli tasdiqlandi!\n\nAkkountingiz 3 ta farzandingiz (Ali, Madina, Hasan) bilan avtomatik bog'landi!", [
+          'Farzandim', 'Dars Jadvali', 'Davomat', 'Uy Vazifalari', 'Natijalar', 'To\'lovlar', 'Yordam'
         ]);
       } else if (btnText.includes('Farzandni almashtirish')) {
         const nextChild = childrenList[(childrenList.indexOf(selectedChild) + 1) % childrenList.length];
         setSelectedChild(nextChild);
-        addBotMessage(`✅ Farzand almashtirildi! Hozirgi tanlangan farzand: ${nextChild} 👦`, [
-          '👦 Farzandim', '✅ Davomat', '📝 Uy Vazifalari', '💰 To\'lovlar'
+        addBotMessage(`Farzand almashtirildi! Hozirgi tanlangan farzand: ${nextChild}`, [
+          'Farzandim', 'Davomat', 'Uy Vazifalari', 'To\'lovlar'
         ]);
       } else if (btnText.includes('Farzandim')) {
-        addBotMessage(`👦 Tanlangan Farzand: ${selectedChild}\n\n• Fan: General English A2\n• Guruh: A2-05\n• O'qituvchi: Aziz Rahimov\n• Bugungi Dars: 18:00 – 19:30 (Room 204)\n• Bugungi Davomat: ✅ Keldi`, [
-          '← Farzandni almashtirish', '📅 Dars Jadvali', '✅ Davomat (94%)', '📝 Uy Vazifalari', '💰 To\'lovlar'
+        addBotMessage(`Tanlangan Farzand: ${selectedChild}\n\n• Fan: General English A2\n• Guruh: A2-05\n• O'qituvchi: Aziz Rahimov\n• Bugungi Dars: 18:00 – 19:30 (Room 204)\n• Bugungi Davomat: Keldi`, [
+          '← Farzandni almashtirish', 'Dars Jadvali', 'Davomat (94%)', 'Uy Vazifalari', 'To\'lovlar'
         ]);
       } else if (btnText.includes('Davomat')) {
-        addBotMessage(`✅ ${selectedChild}ning Davomat Statistikasi:\n\n• Umumiy Davomat: 94% (A'lo)\n• Qatnashgan darslar: 17 ta\n• Kelmagan darslar: 1 ta\n• Kechikishlar: 0 ta\n\n📌 Oxirgi dars: 8-Avgust — ✅ Keldi`, [
+        addBotMessage(`${selectedChild}ning Davomat Statistikasi:\n\n• Umumiy Davomat: 94% (A'lo)\n• Qatnashgan darslar: 17 ta\n• Kelmagan darslar: 1 ta\n• Kechikishlar: 0 ta\n\nOxirgi dars: 8-Avgust — Keldi`, [
           '← Bosh Menyuga Qaytish'
         ]);
       } else if (btnText.includes('Dars Jadvali') || btnText.includes('Jadval')) {
-        addBotMessage(`📅 ${selectedChild}ning Dars Jadvali:\n\n• Dushanba: 18:00 - 19:30 (Room 204)\n• Chorshanba: 18:00 - 19:30 (Room 204)\n• Juma: 18:00 - 19:30 (Room 204)\n\n⚡️ Keyingi Dars: Juma, 18:00 (English A2)`, [
+        addBotMessage(`${selectedChild}ning Dars Jadvali:\n\n• Dushanba: 18:00 - 19:30 (Room 204)\n• Chorshanba: 18:00 - 19:30 (Room 204)\n• Juma: 18:00 - 19:30 (Room 204)\n\nKeyingi Dars: Juma, 18:00 (English A2)`, [
           '← Bosh Menyuga Qaytish'
         ]);
       } else if (btnText.includes('Uy Vazifalari') || btnText.includes('Vazifalar')) {
-        addBotMessage(`📝 ${selectedChild}ning Uy Vazifalari:\n\n1. Unit 5 Vocabulary & Ex 4-8\n   • Muddat: 12-Avgust\n   • Status: 🟢 Tekshirildi (Score: 87/100)\n   • O'qituvchi izohi: "Grammar juda yaxshi!"`, [
-          '📎 Javob Yuborish (Student)', '← Bosh Menyuga Qaytish'
+        addBotMessage(`${selectedChild}ning Uy Vazifalari:\n\n1. Unit 5 Vocabulary & Ex 4-8\n   • Muddat: 12-Avgust\n   • Status: Tekshirildi (Score: 87/100)\n   • O'qituvchi izohi: "Grammar juda yaxshi!"`, [
+          'Javob Yuborish (Student)', '← Bosh Menyuga Qaytish'
         ]);
       } else if (btnText.includes('To\'lovlar') || btnText.includes('To’lov')) {
-        addBotMessage(`💰 To'lov va Qarzdorlik Ma'lumotlari:\n\n• Fan: General English A2\n• Oylik To'lov: 400,000 so'm\n• To'langan: 400,000 so'm\n• Qoldiq Qarzdorlik: 0 so'm (🟢 Paid)\n• Keyingi to'lov muddati: 1-Sentabr`, [
-          '💳 Click / Payme Onlayn To\'lov', '← Bosh Menyuga Qaytish'
+        addBotMessage(`To'lov va Qarzdorlik Ma'lumotlari:\n\n• Fan: General English A2\n• Oylik To'lov: 400,000 so'm\n• To'langan: 400,000 so'm\n• Qoldiq Qarzdorlik: 0 so'm (To'langan)\n• Keyingi to'lov muddati: 1-Sentabr`, [
+          'Click / Payme Onlayn To\'lov', '← Bosh Menyuga Qaytish'
         ]);
       } else if (btnText.includes('Yordam') || btnText.includes('Murojaat')) {
         setShowSupportModal(true);
-        addBotMessage("❓ Yordam va Admin bilan bog'lanish:\n\n📞 Reception: +998 (71) 200-00-00\n📍 Manzil: Toshkent sh., Yunusobod t., 4-mavze\n\n📌 Admin uchun murojaatingizni yozib yuboring:");
+        addBotMessage("Yordam va Admin bilan bog'lanish:\n\nReception: +998 (71) 200-00-00\nManzil: Toshkent sh., Yunusobod t., 4-mavze\n\nAdmin uchun murojaatingizni yozib yuboring:");
       } else {
-        addBotMessage(`Sizning so'rovingiz qabul qilindi: "${btnText}". Backend baza orqali ma'lumotlar yangilandi! ✅`, [
-          '🏠 Bosh Menyuga Qaytish'
+        addBotMessage(`Sizning so'rovingiz qabul qilindi: "${btnText}". Backend baza orqali ma'lumotlar yangilandi!`, [
+          'Bosh Menyuga Qaytish'
         ]);
       }
     }, 400);
@@ -77,22 +77,22 @@ export default function TelegramBotSimulator() {
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', color: '#0f172a', fontFamily: "'Inter', sans-serif", padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       
       <div style={{ maxWidth: '800px', width: '100%', marginBottom: '16px', backgroundColor: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '12px', padding: '12px', textAlign: 'center', color: '#92400e', fontWeight: '700', fontSize: '14px' }}>
-        ⚠️ Bu Telegram Bot Simulyatoridir. Real bot @TalimPlusBot orqali ishlaydi.
+        Bu Telegram Bot Simulyatoridir. Real bot @TalimPlusBot orqali ishlaydi.
       </div>
       {/* HEADER CONTROLS */}
       <div style={{ maxWidth: '800px', width: '100%', backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '24px', padding: '24px', marginBottom: '24px', boxShadow: '0 10px 30px rgba(37,99,235,0.08)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <h1 style={{ fontSize: '22px', fontWeight: '900', color: '#0f172a', margin: 0 }}>Ta'lim Plus Telegram Bot Live Simulator 🤖</h1>
+            <h1 style={{ fontSize: '22px', fontWeight: '900', color: '#0f172a', margin: 0 }}>Ta'lim Plus Telegram Bot Live Simulator</h1>
             <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0' }}>Real-time backend API va SQLite database bilan 100% integratsiyalashgan Telegram Bot</p>
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setUserRole('PARENT')} style={{ padding: '8px 16px', borderRadius: '12px', border: 'none', backgroundColor: userRole === 'PARENT' ? '#2563eb' : '#eff6ff', color: userRole === 'PARENT' ? '#ffffff' : '#1d4ed8', fontWeight: '800', fontSize: '12px', cursor: 'pointer' }}>
-              👨‍👩‍👧 Ota-ona Mode
+              Ota-ona Mode
             </button>
             <button onClick={() => setUserRole('STUDENT')} style={{ padding: '8px 16px', borderRadius: '12px', border: 'none', backgroundColor: userRole === 'STUDENT' ? '#2563eb' : '#eff6ff', color: userRole === 'STUDENT' ? '#ffffff' : '#1d4ed8', fontWeight: '800', fontSize: '12px', cursor: 'pointer' }}>
-              🎓 Student Mode
+              Student Mode
             </button>
           </div>
         </div>
@@ -101,7 +101,7 @@ export default function TelegramBotSimulator() {
           <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px 18px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13px', fontWeight: '800', color: '#1d4ed8' }}>Tanlangan Farzand: <strong>{selectedChild}</strong></span>
             <button onClick={() => handleUserClick('Farzandni almashtirish')} style={{ padding: '6px 14px', borderRadius: '10px', border: '1px solid #bfdbfe', backgroundColor: '#ffffff', color: '#1d4ed8', fontWeight: '800', fontSize: '11px', cursor: 'pointer' }}>
-              🔄 Farzandni Almashtirish
+              Farzandni Almashtirish
             </button>
           </div>
         )}
@@ -116,11 +116,11 @@ export default function TelegramBotSimulator() {
             <img src="/logo.png" alt="Bot Logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
           </div>
           <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '900', margin: 0 }}>Ta'lim Plus Bot 🤖</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: '900', margin: 0 }}>Ta'lim Plus Bot</h3>
             <span style={{ fontSize: '11px', opacity: 0.9 }}>bot • online • Real-time API</span>
           </div>
           <button onClick={() => setShowQrModal(true)} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', fontWeight: '800', fontSize: '11px', cursor: 'pointer' }}>
-            📱 QR Pass
+            QR Pass
           </button>
         </div>
 
@@ -202,7 +202,7 @@ export default function TelegramBotSimulator() {
       {showQrModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(6px)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div className="animate-fade-in" style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '28px', maxWidth: '400px', width: '100%', padding: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px', textAlign: 'center' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a', margin: 0 }}>Student QR Pass 📱</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a', margin: 0 }}>Student QR Pass</h3>
             <p style={{ fontSize: '12px', color: '#475569', margin: 0 }}>O'quv markaz darsxonasiga kirish va yo'qlama uchun shaxsiy QR kod</p>
             <div style={{ padding: '16px', border: '3px solid #2563eb', borderRadius: '20px', backgroundColor: '#ffffff' }}>
               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=STUDENT_PASS_ALI_VALIYEV_100101`} alt="QR Code" style={{ width: '180px', height: '180px', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />

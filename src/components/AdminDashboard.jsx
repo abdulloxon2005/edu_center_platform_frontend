@@ -145,7 +145,7 @@ export default function AdminDashboard() {
     try {
       await financeAPI.deletePayment(paymentId);
       setPayments(prev => prev.filter(p => p.id !== paymentId));
-      triggerNotification("To'lov muvaffaqiyatli o'chirildi! 🗑️");
+      triggerNotification("To'lov muvaffaqiyatli o'chirildi!");
       const [st, debts] = await Promise.all([
         financeAPI.getDashboardStats().catch(() => null),
         financeAPI.getDebtors().catch(() => [])
@@ -239,13 +239,13 @@ export default function AdminDashboard() {
       };
       if (format === 'excel') {
         await reportsAPI.downloadExcel(params);
-        triggerNotification("Excel hisobot muvaffaqiyatli yuklab olindi! 📥");
+        triggerNotification("Excel hisobot muvaffaqiyatli yuklab olindi!");
       } else if (format === 'pdf') {
         await reportsAPI.downloadPdf(params);
-        triggerNotification("PDF hisobot muvaffaqiyatli yuklab olindi! 📄");
+        triggerNotification("PDF hisobot muvaffaqiyatli yuklab olindi!");
       } else if (format === 'docx') {
         await reportsAPI.downloadDocx(params);
-        triggerNotification("Word hisobot muvaffaqiyatli yuklab olindi! 📝");
+        triggerNotification("Word hisobot muvaffaqiyatli yuklab olindi!");
       }
     } catch(err) {
       console.error(err);
@@ -298,7 +298,7 @@ export default function AdminDashboard() {
         attendances: attendancesPayload
       });
 
-      triggerNotification("Davomat muvaffaqiyatli saqlandi! ✅");
+      triggerNotification("Davomat muvaffaqiyatli saqlandi!");
       setAdminMarkModalLesson(null);
       const [journal, gSum] = await Promise.all([
         attendanceAPI.getGroupJournal(selectedAttendanceGroup.group_id || selectedAttendanceGroup.id),
@@ -322,7 +322,7 @@ export default function AdminDashboard() {
         lesson_date: adminAddLessonDate,
         topic: adminAddLessonTopic || null
       });
-      triggerNotification(`Dars sanasi qo'shildi (${adminAddLessonDate})! ✅`);
+      triggerNotification(`Dars sanasi qo'shildi (${adminAddLessonDate})!`);
       setShowAdminAddLessonModal(false);
       setAdminAddLessonTopic('');
       const journal = await attendanceAPI.getGroupJournal(selectedAttendanceGroup.group_id || selectedAttendanceGroup.id);
@@ -642,17 +642,17 @@ export default function AdminDashboard() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           {lead.phone && (
                             <a href={`tel:${lead.phone}`} style={{ color: '#2563eb', fontWeight: '700', fontSize: '13px', textDecoration: 'none' }}>
-                              📞 {lead.phone}
+                              {lead.phone}
                             </a>
                           )}
                           {lead.father_phone && (
                             <a href={`tel:${lead.father_phone}`} style={{ color: '#475569', fontWeight: '600', fontSize: '12px', textDecoration: 'none' }}>
-                              👨 Otasi: {lead.father_phone}
+                              Otasi: {lead.father_phone}
                             </a>
                           )}
                           {lead.mother_phone && (
                             <a href={`tel:${lead.mother_phone}`} style={{ color: '#475569', fontWeight: '600', fontSize: '12px', textDecoration: 'none' }}>
-                              👩 Onasi: {lead.mother_phone}
+                              Onasi: {lead.mother_phone}
                             </a>
                           )}
                           {!lead.phone && !lead.father_phone && !lead.mother_phone && (
@@ -857,18 +857,18 @@ export default function AdminDashboard() {
                 <td style={{ padding: '16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     {u.phone ? (
-                      <span style={{ fontWeight: '700', color: '#0f172a' }}>📞 {u.phone}</span>
+                      <span style={{ fontWeight: '700', color: '#0f172a' }}>{u.phone}</span>
                     ) : (
                       <span style={{ color: '#94a3b8', fontSize: '13px' }}>— Shaxsiy raqam yo'q</span>
                     )}
                     {u.father_phone && (
-                      <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>👨 Otasi: {u.father_phone}</span>
+                      <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>Otasi: {u.father_phone}</span>
                     )}
                     {u.mother_phone && (
-                      <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>👩 Onasi: {u.mother_phone}</span>
+                      <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>Onasi: {u.mother_phone}</span>
                     )}
                     {!u.father_phone && !u.mother_phone && u.parent_phone && (
-                      <span style={{ fontSize: '12px', color: '#475569' }}>👪 Ota-ona: {u.parent_phone}</span>
+                      <span style={{ fontSize: '12px', color: '#475569' }}>Ota-ona: {u.parent_phone}</span>
                     )}
                   </div>
                 </td>
@@ -889,7 +889,7 @@ export default function AdminDashboard() {
                         padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '800',
                         backgroundColor: '#dcfce7', color: '#166534'
                       }}>
-                        ✅ Ulangan
+                        Ulangan
                       </span>
                       <button onClick={async () => {
                         if (!window.confirm(`${u.full_name} ning Telegram botini uzishni xohlaysizmi?`)) return;
@@ -918,28 +918,28 @@ export default function AdminDashboard() {
                 </td>
                 <td style={{ padding: '16px', display: 'flex', gap: '8px' }}>
                   <button onClick={() => setEditUserModal(u)} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Tahrirlash</button>
-                  <button onClick={() => { setSelectedStudentForFreeze(u); setShowFreezeModal(true); }} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', fontWeight: '700' }}>Muzlatish ❄️</button>
+                  <button onClick={() => { setSelectedStudentForFreeze(u); setShowFreezeModal(true); }} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', fontWeight: '700' }}>Muzlatish</button>
                   <button onClick={async () => {
                     const newStatus = u.student_status === 'ARCHIVED' ? 'ACTIVE' : 'ARCHIVED';
                     try {
                       await usersAPI.updateUser(u.id, { student_status: newStatus });
                       setUsers(prev => prev.map(usr => usr.id === u.id ? { ...usr, student_status: newStatus } : usr));
-                      triggerNotification(`${u.full_name} holati ${newStatus === 'ARCHIVED' ? 'Arxivlandi 📦' : 'Faollashtirildi'}`);
+                      triggerNotification(`${u.full_name} holati ${newStatus === 'ARCHIVED' ? 'Arxivlandi' : 'Faollashtirildi'}`);
                     } catch(e) {
                       triggerNotification("Holatni o'zgartirishda xatolik");
                     }
                   }} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>
-                    {u.student_status === 'ARCHIVED' ? 'Tiklash 🔄' : 'Arxivlash 📦'}
+                    {u.student_status === 'ARCHIVED' ? 'Tiklash' : 'Arxivlash'}
                   </button>
                   <button onClick={async () => {
                     if (!window.confirm(`"${u.full_name}" foydalanuvchisini tizimdan butunlay o'chirmoqchimisiz? (Bog'langan barcha ma'lumotlar ham tozalanadi)`)) return;
                     try {
                       const res = await usersAPI.deleteUser(u.id, true);
                       setUsers(prev => prev.filter(usr => usr.id !== u.id));
-                      triggerNotification(res?.message || `${u.full_name} muvaffaqiyatli o'chirildi 🗑️`);
+                      triggerNotification(res?.message || `${u.full_name} muvaffaqiyatli o\'chirildi`);
                     } catch(e) {
                       const detail = e.response?.data?.detail || "O'chirishda xatolik yuz berdi";
-                      triggerNotification(`❌ ${detail}`);
+                      triggerNotification(detail);
                     }
                   }} style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', backgroundColor: '#fee2e2', color: '#dc2626', cursor: 'pointer', fontWeight: '700' }}>O'chirish</button>
                 </td>
@@ -1091,7 +1091,7 @@ export default function AdminDashboard() {
                     triggerNotification(`${g.name} holati o'zgartirildi!`);
                   } catch(e) { triggerNotification("Holatni o'zgartirishda xatolik"); }
                 }} style={{ flex: 1, padding: '10px 8px', borderRadius: '12px', border: '1px solid #bfdbfe', backgroundColor: '#f8fafc', color: '#475569', fontWeight: '700', cursor: 'pointer', fontSize: '12px' }}>
-                  {g.is_active ? 'Tugatish 🏁' : 'Faollashtirish'}
+                  {g.is_active ? 'Tugatish' : 'Faollashtirish'}
                 </button>
                 <button onClick={async () => {
                   if (!window.confirm(`"${g.name}" guruhini o'chirishni tasdiqlaysizmi?`)) return;
@@ -1173,7 +1173,7 @@ export default function AdminDashboard() {
               style={{ padding: '8px 14px', borderRadius: '10px', border: '1px solid #2563eb', backgroundColor: '#eff6ff', color: '#2563eb', fontWeight: '800', cursor: 'pointer', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>send_and_archive</span>
-              {generatingBilling ? 'Yangilanmoqda...' : '🔄 1-sana Avto-Hisob & Telegram'}
+              {generatingBilling ? 'Yangilanmoqda...' : '1-sana Avto-Hisob & Telegram'}
             </button>
           </div>
         </div>
@@ -1226,7 +1226,7 @@ export default function AdminDashboard() {
               {debtorsList.length === 0 && (
                 <tr>
                   <td colSpan="6" style={{ padding: '24px', textAlign: 'center', color: '#166534', backgroundColor: '#f0fdf4', fontWeight: '700' }}>
-                    🎉 Barcha to'lovlar o'z vaqtida amalga oshirilgan, qarzdorliklar mavjud emas!
+                    Barcha to'lovlar o'z vaqtida amalga oshirilgan, qarzdorliklar mavjud emas!
                   </td>
                 </tr>
               )}
@@ -1370,11 +1370,11 @@ export default function AdminDashboard() {
                       {g.days_of_week === 'MON,WED,FRI' ? 'Dush / Chor / Jum (Toq)' : g.days_of_week === 'TUE,THU,SAT' ? 'Sesh / Pay / Shan (Juft)' : g.days_of_week === 'ALL' ? 'Har kuni (Dush - Shan)' : g.days_of_week}
                     </td>
                     <td style={{ padding: '16px', fontWeight: '800', color: '#0f172a' }}>
-                      ⏱️ {g.start_time} - {g.end_time}
+                      {g.start_time} - {g.end_time}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <span style={{ padding: '6px 12px', borderRadius: '8px', backgroundColor: '#f1f5f9', color: '#0f172a', fontWeight: '800', fontSize: '13px' }}>
-                        🚪 {room?.name || `${g.room_id}-xona`}
+                        {room?.name || `${g.room_id}-xona`}
                       </span>
                     </td>
                     <td style={{ padding: '16px', fontWeight: '700' }}>
@@ -1411,7 +1411,7 @@ export default function AdminDashboard() {
     try {
       const res = await analyticsAPI.startExam(exam.id);
       setExams(prev => prev.map(e => e.id === exam.id ? { ...e, status: 'ACTIVE', started_at: res.started_at } : e));
-      triggerNotification(`🚀 "${exam.title}" imtihoni boshlandi!`);
+      triggerNotification(`"${exam.title}" imtihoni boshlandi!`);
     } catch(err) {
       triggerNotification("Imtihonni boshlashda xatolik");
     }
@@ -1421,7 +1421,7 @@ export default function AdminDashboard() {
     try {
       await analyticsAPI.finishExam(exam.id);
       setExams(prev => prev.map(e => e.id === exam.id ? { ...e, status: 'COMPLETED' } : e));
-      triggerNotification(`⏹️ "${exam.title}" imtihoni yakunlandi!`);
+      triggerNotification(`"${exam.title}" imtihoni yakunlandi!`);
     } catch(err) {
       triggerNotification("Imtihonni yakunlashda xatolik");
     }
@@ -1492,7 +1492,7 @@ export default function AdminDashboard() {
         results: resultsPayload
       });
 
-      triggerNotification(`✅ ${res.results_count} ta o'quvchi natijasi saqlandi! (${res.certificates_awarded} ta sertifikat berildi 🎓)`);
+      triggerNotification(`${res.results_count} ta o'quvchi natijasi saqlandi! (${res.certificates_awarded} ta sertifikat berildi)`);
       setAdminOfflineModal(null);
       const [updatedExams, updatedCerts] = await Promise.all([
         analyticsAPI.getExams().catch(() => []),
@@ -1591,17 +1591,17 @@ export default function AdminDashboard() {
                         <td style={{ padding: '16px', fontWeight: '800', color: '#0f172a' }}>{e.title}</td>
                         <td style={{ padding: '16px' }}>
                           <span style={{ fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '6px', backgroundColor: isOnline ? '#eff6ff' : '#f5f3ff', color: isOnline ? '#1d4ed8' : '#7c3aed' }}>
-                            {isOnline ? '🌐 Online' : '📝 Offline'}
+                            {isOnline ? 'Online' : 'Offline'}
                           </span>
                         </td>
                         <td style={{ padding: '16px', fontWeight: '700', color: '#2563eb' }}>{e.group_name || `Guruh #${e.group_id}`}</td>
                         <td style={{ padding: '16px', color: '#475569' }}>
-                          <div>📅 {e.exam_date}</div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>⏱️ {e.duration_minutes || 30} daqiqa</div>
+                          <div>Sana: {e.exam_date}</div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>Vaqt: {e.duration_minutes || 30} daqiqa</div>
                         </td>
                         <td style={{ padding: '16px' }}>
                           <div>Max: <strong>{e.max_score}</strong></div>
-                          <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700' }}>🎓 Sertifikat: {e.pass_score || 70}+</div>
+                          <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700' }}>Sertifikat: {e.pass_score || 70}+</div>
                         </td>
                         <td style={{ padding: '16px' }}>
                           <span style={{
@@ -1609,7 +1609,7 @@ export default function AdminDashboard() {
                             backgroundColor: isScheduled ? '#fef3c7' : isActive ? '#dbeafe' : '#dcfce7',
                             color: isScheduled ? '#b45309' : isActive ? '#1d4ed8' : '#166534'
                           }}>
-                            {isScheduled ? '⏳ Kutilmoqda' : isActive ? '⚡️ Jonli' : '✅ Yakunlangan'}
+                            {isScheduled ? 'Kutilmoqda' : isActive ? 'Jonli' : 'Yakunlangan'}
                           </span>
                         </td>
                         <td style={{ padding: '16px' }}>
@@ -1682,7 +1682,7 @@ export default function AdminDashboard() {
                   {filteredCerts.map(c => (
                     <tr key={c.id} style={{ borderBottom: '1px solid #eff6ff' }}>
                       <td style={{ padding: '16px', fontWeight: '900', color: '#15803d' }}>
-                        🎓 {c.certificate_code}
+                        {c.certificate_code}
                       </td>
                       <td style={{ padding: '16px', fontWeight: '800', color: '#0f172a' }}>
                         {c.student_name} <span style={{ color: '#2563eb', fontSize: '12px' }}>({c.student_login_id})</span>
@@ -1695,7 +1695,7 @@ export default function AdminDashboard() {
                       </td>
                       <td style={{ padding: '16px' }}>
                         <span style={{ fontSize: '11px', fontWeight: '800', backgroundColor: '#dcfce7', color: '#166534', padding: '3px 8px', borderRadius: '6px' }}>
-                          ✓ Haqiqiy
+                          Haqiqiy
                         </span>
                       </td>
                       <td style={{ padding: '16px', textAlign: 'center' }}>
@@ -1742,10 +1742,10 @@ export default function AdminDashboard() {
               </button>
               <div>
                 <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {selectedAttendanceGroup.group_name || selectedAttendanceGroup.name} — Davomat Jurnali 📋
+                  {selectedAttendanceGroup.group_name || selectedAttendanceGroup.name} — Davomat Jurnali
                 </h2>
                 <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>
-                  📚 Fan: <strong>{selectedAttendanceGroup.course_title || selectedAttendanceGroup.courseName}</strong> • 👨‍🏫 O'qituvchi: <strong>{selectedAttendanceGroup.teacher_name}</strong> • 🚪 Xona: <strong>{selectedAttendanceGroup.room_name || selectedAttendanceGroup.roomName}</strong> • 📅 {selectedAttendanceGroup.days_of_week} ({selectedAttendanceGroup.start_time} - {selectedAttendanceGroup.end_time})
+                  Fan: <strong>{selectedAttendanceGroup.course_title || selectedAttendanceGroup.courseName}</strong> • O'qituvchi: <strong>{selectedAttendanceGroup.teacher_name}</strong> • Xona: <strong>{selectedAttendanceGroup.room_name || selectedAttendanceGroup.roomName}</strong> • {selectedAttendanceGroup.days_of_week} ({selectedAttendanceGroup.start_time} - {selectedAttendanceGroup.end_time})
                 </p>
               </div>
             </div>
@@ -1770,7 +1770,7 @@ export default function AdminDashboard() {
           {/* Journal Table */}
           {groupJournalLoading ? (
             <div style={{ padding: '60px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '24px', border: '1px solid #bfdbfe' }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>⏳</div>
+              <div style={{ marginBottom: '8px' }}><span className="material-symbols-outlined" style={{ fontSize: '28px', color: '#64748b' }}>hourglass_empty</span></div>
               <p style={{ margin: 0, color: '#64748b', fontWeight: '800' }}>Guruh davomat jurnali yuklanmoqda...</p>
             </div>
           ) : groupJournalData ? (
@@ -1830,7 +1830,7 @@ export default function AdminDashboard() {
                                 if (!window.confirm(`${lesson.lesson_date} sanasidagi darsni va uning davomatini o'chirishni tasdiqlaysizmi?`)) return;
                                 try {
                                   await attendanceAPI.deleteLesson(lesson.id);
-                                  triggerNotification("Dars sanasi muvaffaqiyatli o'chirildi ✅");
+                                  triggerNotification("Dars sanasi muvaffaqiyatli o'chirildi");
                                   const journal = await attendanceAPI.getGroupJournal(selectedAttendanceGroup.group_id || selectedAttendanceGroup.id);
                                   setGroupJournalData(journal);
                                 } catch (err) {
@@ -1883,7 +1883,7 @@ export default function AdminDashboard() {
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                               <span style={{ fontSize: '14px' }}>{student.full_name}</span>
                               <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
-                                ID: <strong style={{ color: '#2563eb' }}>{student.login_id}</strong> • 📞 {student.phone}
+                                ID: <strong style={{ color: '#2563eb' }}>{student.login_id}</strong> • {student.phone}
                               </span>
                             </div>
                           </td>
@@ -2032,7 +2032,7 @@ export default function AdminDashboard() {
                     <div>
                       <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a', margin: 0 }}>{g.group_name}</h3>
                       <span style={{ fontSize: '12px', fontWeight: '800', color: '#2563eb', backgroundColor: '#eff6ff', padding: '3px 8px', borderRadius: '6px', border: '1px solid #bfdbfe', display: 'inline-block', marginTop: '4px' }}>
-                        📚 {g.course_title}
+                        {g.course_title}
                       </span>
                     </div>
 
@@ -2069,7 +2069,7 @@ export default function AdminDashboard() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#64748b' }}>meeting_room</span>
-                      <span>Xona: <strong>{g.room_name}</strong> • 📅 {g.days_of_week}</span>
+                      <span>Xona: <strong>{g.room_name}</strong> • {g.days_of_week}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#64748b' }}>schedule</span>
@@ -2682,10 +2682,10 @@ export default function AdminDashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {[
-                { id: 'overview', label: '📖 Fanlar Samaradorligi', count: (reportData?.courses_breakdown || []).length },
-                { id: 'teachers', label: '👨‍🏫 O\'qituvchilar', count: (reportData?.teachers_breakdown || []).length },
-                { id: 'payments', label: '💳 To\'lovlar Tarixi', count: (reportData?.payments || []).length },
-                { id: 'expenses', label: '🧾 Xarajatlar Tarixi', count: (reportData?.expenses || []).length }
+                { id: 'overview', label: 'Fanlar Samaradorligi', count: (reportData?.courses_breakdown || []).length },
+                { id: 'teachers', label: "O'qituvchilar", count: (reportData?.teachers_breakdown || []).length },
+                { id: 'payments', label: "To'lovlar Tarixi", count: (reportData?.payments || []).length },
+                { id: 'expenses', label: 'Xarajatlar Tarixi', count: (reportData?.expenses || []).length }
               ].map(st => (
                 <button
                   key={st.id}
@@ -3036,7 +3036,7 @@ export default function AdminDashboard() {
                 });
                 if (res && res.id) {
                   setUsers(prev => [res, ...prev]);
-                  triggerNotification(`Yangi ${role === 'STUDENT' ? "o'quvchi" : role === 'TEACHER' ? "o'qituvchi" : "admin"} muvaffaqiyatli qo'shildi! ID: ${res.login_id} ✅`);
+                  triggerNotification(`Yangi ${role === 'STUDENT' ? "o'quvchi" : role === 'TEACHER' ? "o'qituvchi" : "admin"} muvaffaqiyatli qo'shildi! ID: ${res.login_id}`);
                   setShowAddUserModal(false);
                 }
               } catch(err) {
@@ -3054,11 +3054,11 @@ export default function AdminDashboard() {
               
               <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👨 Otasining telefoni (ixtiyoriy)</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Otasining telefoni (ixtiyoriy)</label>
                   <input name="father_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👩 Onasining telefoni (ixtiyoriy)</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Onasining telefoni (ixtiyoriy)</label>
                   <input name="mother_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
                 </div>
               </div>
@@ -3120,7 +3120,7 @@ export default function AdminDashboard() {
                 const res = await usersAPI.updateUser(editUserModal.id, updateData);
                 setUsers(prev => prev.map(u => u.id === editUserModal.id ? { ...u, ...(res || updateData) } : u));
                 setEditUserModal(null);
-                triggerNotification("Foydalanuvchi ma'lumotlari muvaffaqiyatli saqlandi! ✅");
+                triggerNotification("Foydalanuvchi ma'lumotlari muvaffaqiyatli saqlandi!");
               } catch(err) {
                 const detail = err.response?.data?.detail || "Foydalanuvchini tahrirlashda xatolik yuz berdi";
                 triggerNotification(detail);
@@ -3136,11 +3136,11 @@ export default function AdminDashboard() {
               
               <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👨 Otasining telefoni</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Otasining telefoni</label>
                   <input name="father_phone" type="tel" defaultValue={editUserModal.father_phone || '+998'} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👩 Onasining telefoni</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Onasining telefoni</label>
                   <input name="mother_phone" type="tel" defaultValue={editUserModal.mother_phone || '+998'} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
                 </div>
               </div>
@@ -3201,7 +3201,7 @@ export default function AdminDashboard() {
                 if (status !== 'NEW' && createdLead && createdLead.id) {
                   await handleUpdateLeadStatus(createdLead.id, status, notes);
                 } else {
-                  triggerNotification("Yangi ariza muvaffaqiyatli qo'shildi! ✅");
+                  triggerNotification("Yangi ariza muvaffaqiyatli qo'shildi!");
                   await fetchLeads();
                 }
                 setShowAddLeadModal(false);
@@ -3220,11 +3220,11 @@ export default function AdminDashboard() {
 
               <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👨 Otasining telefoni (ixtiyoriy)</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Otasining telefoni (ixtiyoriy)</label>
                   <input name="father_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👩 Onasining telefoni (ixtiyoriy)</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Onasining telefoni (ixtiyoriy)</label>
                   <input name="mother_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
                 </div>
               </div>
@@ -3262,14 +3262,14 @@ export default function AdminDashboard() {
       {showFreezeModal && selectedStudentForFreeze && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '400px' }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900' }}>Muzlatish ❄️: {selectedStudentForFreeze.full_name}</h3>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900' }}>Muzlatish: {selectedStudentForFreeze.full_name}</h3>
             <form onSubmit={async e => {
               e.preventDefault();
               const studentId = selectedStudentForFreeze.id;
               try {
                 await usersAPI.updateUser(studentId, { student_status: 'FROZEN' });
                 setUsers(prev => prev.map(u => u.id === studentId ? { ...u, student_status: 'FROZEN' } : u));
-                triggerNotification(`${selectedStudentForFreeze.full_name} muzlatildi ❄️`);
+                triggerNotification(`${selectedStudentForFreeze.full_name} muzlatildi`);
               } catch(err) {
                 triggerNotification("Muzlatishda xatolik yuz berdi");
               }
@@ -3558,7 +3558,7 @@ export default function AdminDashboard() {
                   discount_type: assignTariffType === 'STANDART' ? 'STANDARD' : assignTariffType,
                   custom_price: customPriceVal
                 });
-                triggerNotification(res?.message || "O'quvchi guruhga muvaffaqiyatli biriktirildi! 🎓");
+                triggerNotification(res?.message || "O'quvchi guruhga muvaffaqiyatli biriktirildi!");
                 
                 // Refresh groups list
                 try {
@@ -3745,7 +3745,7 @@ export default function AdminDashboard() {
                     <div style={{ position: 'relative' }}>
                       <input 
                         type="text" 
-                        placeholder="🔍 6 talik ID (masalan: 100101) yoki Ism (masalan: Ali) yozing..." 
+                        placeholder="6 talik ID (masalan: 100101) yoki Ism (masalan: Ali) yozing..." 
                         value={paymentSearchQuery} 
                         onChange={e => setPaymentSearchQuery(e.target.value)} 
                         style={{ width: '100%', padding: '12px 14px', borderRadius: '14px', border: '2px solid #bfdbfe', outline: 'none', fontSize: '14px', backgroundColor: '#f8fafc' }}
@@ -3784,7 +3784,7 @@ export default function AdminDashboard() {
                                 {s.full_name}
                               </span>
                               <span style={{ fontSize: '12px', color: '#64748b' }}>
-                                ID: <strong style={{ color: '#2563eb' }}>{s.login_id}</strong> • 📞 {s.phone}
+                                ID: <strong style={{ color: '#2563eb' }}>{s.login_id}</strong> • {s.phone}
                               </span>
                             </div>
                             <div style={{ textAlign: 'right' }}>
@@ -3796,7 +3796,7 @@ export default function AdminDashboard() {
                                 color: s.telegram_chat_id ? '#166534' : '#64748b',
                                 fontWeight: '800' 
                               }}>
-                                {s.telegram_chat_id ? '📱 Bot ulangan' : 'Bot ulanmagan'}
+                                {s.telegram_chat_id ? 'Bot ulangan' : 'Bot ulanmagan'}
                               </span>
                             </div>
                           </div>
@@ -3816,7 +3816,7 @@ export default function AdminDashboard() {
                         </h4>
                       </div>
                       <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#3b82f6' }}>
-                        ID: <strong>{selectedStudentForPayment.login_id}</strong> • 📞 {selectedStudentForPayment.phone}
+                        ID: <strong>{selectedStudentForPayment.login_id}</strong> • {selectedStudentForPayment.phone}
                       </p>
                       <div style={{ marginTop: '6px' }}>
                         <span style={{ 
@@ -3827,7 +3827,7 @@ export default function AdminDashboard() {
                           color: selectedStudentForPayment.telegram_chat_id ? '#15803d' : '#b91c1c',
                           fontWeight: '800' 
                         }}>
-                          {selectedStudentForPayment.telegram_chat_id ? '📱 Telegram Bot Ulangan (Chek botga yuboriladi ✅)' : '⚠️ Telegram Bot Ulanmagan'}
+                          {selectedStudentForPayment.telegram_chat_id ? 'Telegram Bot Ulangan (Chek botga yuboriladi)' : 'Telegram Bot Ulanmagan'}
                         </span>
                       </div>
                     </div>
@@ -3840,7 +3840,7 @@ export default function AdminDashboard() {
                       }} 
                       style={{ padding: '6px 12px', borderRadius: '10px', border: '1px solid #bfdbfe', backgroundColor: '#ffffff', color: '#1d4ed8', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
                     >
-                      O'zgartirish 🔄
+                      O'zgartirish
                     </button>
                   </div>
                 )}
@@ -3869,7 +3869,7 @@ export default function AdminDashboard() {
               {selectedStudentForPayment && (
                 <div style={{ marginBottom: '20px', padding: '16px', borderRadius: '18px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                   {paymentBillingLoading ? (
-                    <p style={{ margin: 0, color: '#64748b', fontSize: '13px', textAlign: 'center' }}>⏳ O'quvchi kurslari va to'lov ma'lumotlari hisoblanmoqda...</p>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '13px', textAlign: 'center' }}>O'quvchi kurslari va to'lov ma'lumotlari hisoblanmoqda...</p>
                   ) : paymentBillingInfo ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <div>
@@ -3878,7 +3878,7 @@ export default function AdminDashboard() {
                           {paymentBillingInfo.groups.length > 0 ? (
                             paymentBillingInfo.groups.map(g => (
                               <span key={g.group_id} style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '8px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', border: '1px solid #bfdbfe' }}>
-                                📚 {g.course_title} ({g.group_name}) — {(g.price_monthly || 0).toLocaleString()} UZS
+                                {g.course_title} ({g.group_name}) — {(g.price_monthly || 0).toLocaleString()} UZS
                               </span>
                             ))
                           ) : (
@@ -3923,12 +3923,12 @@ export default function AdminDashboard() {
 
                       {paymentBillingInfo.total_debt > 0 && (
                         <div style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '8px', backgroundColor: '#fee2e2', color: '#991b1b', fontWeight: '800' }}>
-                          ⚠️ O'quvchining jami umumiy qarzdorligi: -{(paymentBillingInfo.total_debt || 0).toLocaleString()} UZS
+                          O'quvchining jami umumiy qarzdorligi: -{(paymentBillingInfo.total_debt || 0).toLocaleString()} UZS
                         </div>
                       )}
                       {paymentBillingInfo.total_credit > 0 && (
                         <div style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '8px', backgroundColor: '#dcfce7', color: '#166534', fontWeight: '800' }}>
-                          ✨ O'quvchining jami haqdorligi (ortiqcha to'lovi): +{(paymentBillingInfo.total_credit || 0).toLocaleString()} UZS
+                          O'quvchining jami haqdorligi (ortiqcha to'lovi): +{(paymentBillingInfo.total_credit || 0).toLocaleString()} UZS
                         </div>
                       )}
                     </div>
@@ -3996,7 +3996,7 @@ export default function AdminDashboard() {
                     <div style={{ marginBottom: '18px', padding: '14px 16px', borderRadius: '14px', backgroundColor: '#fff1f2', border: '1.5px solid #fecdd3' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontWeight: '900', color: '#e11d48', fontSize: '14px' }}>
-                          🔴 QARZDORLIK QOLADI: -{remaining.toLocaleString()} UZS
+                          QARZDORLIK QOLADI: -{remaining.toLocaleString()} UZS
                         </span>
                         <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', backgroundColor: '#ffe4e6', color: '#be123c', fontWeight: '800' }}>
                           Yetishmadi
@@ -4013,7 +4013,7 @@ export default function AdminDashboard() {
                     <div style={{ marginBottom: '18px', padding: '14px 16px', borderRadius: '14px', backgroundColor: '#ecfdf5', border: '1.5px solid #a7f3d0' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontWeight: '900', color: '#059669', fontSize: '14px' }}>
-                          ✨ HAQDORLIK (ORTIQCHA TO'LOV): +{diff.toLocaleString()} UZS
+                          HAQDORLIK (ORTIQCHA TO'LOV): +{diff.toLocaleString()} UZS
                         </span>
                         <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', backgroundColor: '#d1fae5', color: '#065f46', fontWeight: '800' }}>
                           Depozit
@@ -4029,7 +4029,7 @@ export default function AdminDashboard() {
                   return (
                     <div style={{ marginBottom: '18px', padding: '14px 16px', borderRadius: '14px', backgroundColor: '#eff6ff', border: '1.5px solid #bfdbfe' }}>
                       <span style={{ fontWeight: '900', color: '#2563eb', fontSize: '14px', display: 'block' }}>
-                        ✅ TO'LIQ TO'LOV: 0 UZS qarz / haqdorlik
+                        TO'LIQ TO'LOV: 0 UZS qarz / haqdorlik
                       </span>
                       <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#1e40af' }}>
                         {alreadyPaid > 0 ? `Eski to'lov (${alreadyPaid.toLocaleString()} UZS) + Yangi (${enteredSum.toLocaleString()} UZS) = ${monthDue.toLocaleString()} UZS. ` : ''}
@@ -4049,12 +4049,12 @@ export default function AdminDashboard() {
                     onChange={e => setPaymentMethodVal(e.target.value)} 
                     style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #bfdbfe', backgroundColor: '#f8fafc', fontSize: '13px', fontWeight: '700' }}
                   >
-                    <option value="CASH">💵 Naqd (CASH)</option>
-                    <option value="CARD">💳 Karta (CARD)</option>
-                    <option value="CLICK">🔵 Click</option>
-                    <option value="PAYME">🟢 Payme</option>
-                    <option value="UZUM">🟣 Uzum Bank</option>
-                    <option value="BANK_TRANSFER">🏛 Bank o'tkazmasi</option>
+                    <option value="CASH">Naqd (CASH)</option>
+                    <option value="CARD">Karta (CARD)</option>
+                    <option value="CLICK">Click</option>
+                    <option value="PAYME">Payme</option>
+                    <option value="UZUM">Uzum Bank</option>
+                    <option value="BANK_TRANSFER">Bank o'tkazmasi</option>
                   </select>
                 </div>
               </div>
@@ -4147,7 +4147,7 @@ export default function AdminDashboard() {
                   note
                 });
                 setPayments(prev => prev.map(p => p.id === editPaymentModal.id ? updated : p));
-                triggerNotification("To'lov ma'lumotlari muvaffaqiyatli saqlandi! ✅");
+                triggerNotification("To'lov ma'lumotlari muvaffaqiyatli saqlandi!");
                 
                 const [st, debts] = await Promise.all([
                   financeAPI.getDashboardStats().catch(() => null),
@@ -4178,7 +4178,7 @@ export default function AdminDashboard() {
                     <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '15px' }}>
                       {st ? st.full_name : `ID: ${editPaymentModal.student_id}`}
                     </div>
-                    {st && <div style={{ fontSize: '12px', color: '#64748b' }}>ID: <strong>{st.login_id}</strong> • 📞 {st.phone}</div>}
+                    {st && <div style={{ fontSize: '12px', color: '#64748b' }}>ID: <strong>{st.login_id}</strong> • {st.phone}</div>}
                   </div>
                 );
               })()}
@@ -4212,12 +4212,12 @@ export default function AdminDashboard() {
                   defaultValue={editPaymentModal.payment_method || 'CASH'} 
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #bfdbfe', backgroundColor: '#f8fafc', fontSize: '13px', fontWeight: '700' }}
                 >
-                  <option value="CASH">💵 Naqd (CASH)</option>
-                  <option value="CARD">💳 Karta (CARD)</option>
-                  <option value="CLICK">🔵 Click</option>
-                  <option value="PAYME">🟢 Payme</option>
-                  <option value="UZUM">🟣 Uzum Bank</option>
-                  <option value="BANK_TRANSFER">🏛 Bank o'tkazmasi</option>
+                  <option value="CASH">Naqd (CASH)</option>
+                  <option value="CARD">Karta (CARD)</option>
+                  <option value="CLICK">Click</option>
+                  <option value="PAYME">Payme</option>
+                  <option value="UZUM">Uzum Bank</option>
+                  <option value="BANK_TRANSFER">Bank o'tkazmasi</option>
                 </select>
               </div>
 
@@ -4297,13 +4297,13 @@ export default function AdminDashboard() {
                   onChange={e => setCalcTariffType(e.target.value)}
                   style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #2563eb', background: '#eff6ff', color: '#1e40af', fontWeight: '800', fontSize: '14px' }}
                 >
-                  <option value="PRORATA">⏱️ Oyni yarmidan kelgan (Darslar soni bo'yicha Pro-rata)</option>
-                  <option value="GRANT_100">🎓 100% Imtiyozli / Grant (0 UZS)</option>
-                  <option value="DISCOUNT_50">🎁 50% Yarim Imtiyoz (Yarim to'lov)</option>
-                  <option value="CHILD_TARIFF">🧒 Bolalar Tarifi (Kichik yoshdagilar narxi)</option>
-                  <option value="ADULT_TARIFF">👨‍💼 Kattalar Tarifi (Katta yoshdagilar narxi)</option>
-                  <option value="CUSTOM_PRICE">🎯 Maxsus / Fiks Narx (SAT yoki kelishilgan summa)</option>
-                  <option value="STANDART">📘 Standart Oylik To'lov (To'liq summa)</option>
+                  <option value="PRORATA">Oyni yarmidan kelgan (Darslar soni bo'yicha Pro-rata)</option>
+                  <option value="GRANT_100">100% Imtiyozli / Grant (0 UZS)</option>
+                  <option value="DISCOUNT_50">50% Yarim Imtiyoz (Yarim to'lov)</option>
+                  <option value="CHILD_TARIFF">Bolalar Tarifi (Kichik yoshdagilar narxi)</option>
+                  <option value="ADULT_TARIFF">Kattalar Tarifi (Katta yoshdagilar narxi)</option>
+                  <option value="CUSTOM_PRICE">Maxsus / Fiks Narx (SAT yoki kelishilgan summa)</option>
+                  <option value="STANDART">Standart Oylik To'lov (To'liq summa)</option>
                 </select>
               </div>
 
@@ -4430,7 +4430,7 @@ export default function AdminDashboard() {
                       setPaymentAmountVal(finalAmount);
                     }
                     setShowPaymentModal(true);
-                    triggerNotification(`Kalkulyator to'lovi (${finalAmount.toLocaleString()} UZS) to'lov oynasiga o'tkazildi! 💳`);
+                    triggerNotification(`Kalkulyator to'lovi (${finalAmount.toLocaleString()} UZS) to\'lov oynasiga o\'tkazildi!`);
                   }}
                   style={{ flex: 2, padding: '14px', borderRadius: '14px', border: 'none', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: '#fff', cursor: 'pointer', fontWeight: '900', fontSize: '14px', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
@@ -4616,10 +4616,10 @@ export default function AdminDashboard() {
                       <td style={{ padding: '12px 16px', fontWeight: '700' }}>{s.full_name || "O'quvchi"}</td>
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
-                          {s.phone && <div style={{ fontWeight: '700' }}>📞 {s.phone}</div>}
-                          {s.father_phone && <div style={{ color: '#475569' }}>👨 Otasi: {s.father_phone}</div>}
-                          {s.mother_phone && <div style={{ color: '#475569' }}>👩 Onasi: {s.mother_phone}</div>}
-                          {!s.father_phone && !s.mother_phone && s.parent_phone && <div style={{ color: '#475569' }}>👪 Ota-ona: {s.parent_phone}</div>}
+                          {s.phone && <div style={{ fontWeight: '700' }}>{s.phone}</div>}
+                          {s.father_phone && <div style={{ color: '#475569' }}>Otasi: {s.father_phone}</div>}
+                          {s.mother_phone && <div style={{ color: '#475569' }}>Onasi: {s.mother_phone}</div>}
+                          {!s.father_phone && !s.mother_phone && s.parent_phone && <div style={{ color: '#475569' }}>Ota-ona: {s.parent_phone}</div>}
                           {!s.phone && !s.father_phone && !s.mother_phone && !s.parent_phone && <span style={{ color: '#94a3b8' }}>—</span>}
                         </div>
                       </td>
@@ -4654,7 +4654,7 @@ export default function AdminDashboard() {
                             })}
                             style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
                           >
-                            ⚙️ Tarif
+                            Tarif
                           </button>
                           <button 
                             onClick={async () => {
@@ -4672,7 +4672,7 @@ export default function AdminDashboard() {
                             }}
                             style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
                           >
-                            ❌ Chiqarish
+                            Chiqarish
                           </button>
                         </div>
                       </td>
@@ -4715,7 +4715,7 @@ export default function AdminDashboard() {
                   tariff_type: tariffType === 'STANDART' ? 'STANDARD' : tariffType,
                   custom_price: customPrice
                 });
-                triggerNotification(res?.message || "O'quvchi tarifi muvaffaqiyatli yangilandi! 🎓");
+                triggerNotification(res?.message || "O'quvchi tarifi muvaffaqiyatli yangilandi!");
                 
                 // Refresh group detail
                 const updatedDetail = await groupsAPI.getGroupDetail(tariffEditModal.group_id);
@@ -4815,13 +4815,13 @@ export default function AdminDashboard() {
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           <span style={{ fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '6px', backgroundColor: r.is_passed ? '#dcfce7' : '#fee2e2', color: r.is_passed ? '#166534' : '#991b1b' }}>
-                            {r.is_passed ? "O'tdi ✅" : "O'tmadi ❌"}
+                            {r.is_passed ? "O'tdi" : "O'tmadi"}
                           </span>
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           {r.certificate_code ? (
                             <span style={{ fontSize: '11px', fontWeight: '800', color: '#15803d', backgroundColor: '#dcfce7', padding: '3px 8px', borderRadius: '6px' }}>
-                              🎓 {r.certificate_code}
+                              {r.certificate_code}
                             </span>
                           ) : (
                             <span style={{ fontSize: '11px', color: '#94a3b8' }}>Mavjud emas</span>
@@ -4865,9 +4865,9 @@ export default function AdminDashboard() {
             </div>
 
             <div style={{ backgroundColor: '#eff6ff', padding: '12px 16px', borderRadius: '14px', marginBottom: '20px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>🎯 Max ball: <strong>{adminOfflineModal.max_score}</strong></span>
-              <span>🎓 Sertifikat o'tish bali: <strong style={{ color: '#16a34a' }}>{adminOfflineModal.pass_score}</strong>+ ball</span>
-              <span>👥 O'quvchilar: <strong>{adminOfflineStudents.length} ta</strong></span>
+              <span>Max ball: <strong>{adminOfflineModal.max_score}</strong></span>
+              <span>Sertifikat o'tish bali: <strong style={{ color: '#16a34a' }}>{adminOfflineModal.pass_score}</strong>+ ball</span>
+              <span>O'quvchilar: <strong>{adminOfflineStudents.length} ta</strong></span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -4896,7 +4896,7 @@ export default function AdminDashboard() {
                         />
                       </div>
                       {isPassed && (
-                        <span style={{ fontSize: '18px' }} title="Sertifikat beriladi 🎓">🎓</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#16a34a' }} title="Sertifikat beriladi">workspace_premium</span>
                       )}
                     </div>
                   </div>
@@ -4917,7 +4917,7 @@ export default function AdminDashboard() {
                 disabled={adminOfflineSaving || adminOfflineStudents.length === 0}
                 style={{ flex: 2, padding: '12px', borderRadius: '12px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', cursor: adminOfflineSaving ? 'not-allowed' : 'pointer' }}
               >
-                {adminOfflineSaving ? 'Saqlanmoqda...' : '💾 Natijalarni Saqlash & Sertifikatlarni Berish'}
+                {adminOfflineSaving ? 'Saqlanmoqda...' : 'Natijalarni Saqlash & Sertifikatlarni Berish'}
               </button>
             </div>
           </div>
@@ -4958,7 +4958,7 @@ export default function AdminDashboard() {
                 <div style={{ textAlign: 'left', fontSize: '11px', color: '#78350f' }}>
                   <p style={{ margin: 0 }}><strong>Seriya:</strong> {adminCertPreviewModal.certificate_code}</p>
                   <p style={{ margin: '2px 0 0' }}><strong>Sana:</strong> {adminCertPreviewModal.issue_date?.split('T')[0]}</p>
-                  <p style={{ margin: '2px 0 0', color: '#16a34a', fontWeight: '800' }}>✓ Haqiqiy (Verified)</p>
+                  <p style={{ margin: '2px 0 0', color: '#16a34a', fontWeight: '800' }}>Haqiqiy (Verified)</p>
                 </div>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '6px', borderRadius: '10px', border: '1px solid #fde68a' }}>
@@ -5058,7 +5058,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #eff6ff', paddingBottom: '12px' }}>
               <div>
                 <span style={{ fontSize: '11px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', padding: '3px 8px', borderRadius: '6px' }}>
-                  📅 Sana: {adminMarkModalLesson.lesson_date}
+                  Sana: {adminMarkModalLesson.lesson_date}
                 </span>
                 <h3 style={{ margin: '6px 0 0', fontSize: '18px', fontWeight: '900', color: '#0f172a' }}>
                   {selectedAttendanceGroup.group_name || selectedAttendanceGroup.name} — Davomat Qilish

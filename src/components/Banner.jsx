@@ -120,7 +120,9 @@ function Banner() {
         
         {submitSuccess ? (
           <div style={{ textAlign: 'center', padding: '30px 10px' }}>
-            <div style={{ fontSize: '48px', color: '#16a34a', marginBottom: '15px' }}>✅</div>
+            <div style={{ marginBottom: '15px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: '#16a34a' }}>check_circle</span>
+            </div>
             <h4 style={{ fontSize: '20px', color: '#0f172a', marginBottom: '10px' }}>So'rovingiz muvaffaqiyatli jo'natildi!</h4>
             <p style={{ color: '#475569', marginBottom: '20px' }}>Tez orada siz bilan bog'lanamiz.</p>
             <button onClick={() => setSubmitSuccess(false)} className="btn-primary" style={{ padding: '10px 20px', fontSize: '14px' }}>

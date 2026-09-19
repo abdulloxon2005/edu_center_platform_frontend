@@ -194,7 +194,7 @@ function TermsAndConditions() {
       {/* 1. Umumiy qoidalar */}
       <section style={styles.section}>
         <h2 style={styles.sectionHeading}>
-          <span style={styles.sectionIcon}>📜</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#2563eb' }}>description</span>
           1. Umumiy qoidalar
         </h2>
         <p style={styles.paragraph}>
@@ -214,7 +214,7 @@ function TermsAndConditions() {
       {/* 2. Maxfiylik siyosati */}
       <section style={styles.section}>
         <h2 style={styles.sectionHeading}>
-          <span style={styles.sectionIcon}>🔒</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#2563eb' }}>lock</span>
           2. Maxfiylik siyosati
         </h2>
         <p style={styles.paragraph}>
@@ -259,7 +259,7 @@ function TermsAndConditions() {
       {/* 3. Xavfsizlik choralari */}
       <section style={styles.section}>
         <h2 style={styles.sectionHeading}>
-          <span style={styles.sectionIcon}>🛡️</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#2563eb' }}>shield</span>
           3. Xavfsizlik choralari
         </h2>
         <p style={styles.paragraph}>
@@ -284,7 +284,7 @@ function TermsAndConditions() {
       {/* 4. Shaxsiy ma'lumotlarni qayta ishlash */}
       <section style={styles.section}>
         <h2 style={styles.sectionHeading}>
-          <span style={styles.sectionIcon}>👤</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#2563eb' }}>person</span>
           4. Shaxsiy ma'lumotlarni qayta ishlash va foydalanuvchi huquqlari
         </h2>
         <p style={styles.paragraph}>
@@ -306,7 +306,7 @@ function TermsAndConditions() {
       {/* 5. Bepul konsultatsiya shartlari */}
       <section style={styles.section}>
         <h2 style={styles.sectionHeading}>
-          <span style={styles.sectionIcon}>💡</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#2563eb' }}>lightbulb</span>
           5. Bepul konsultatsiya shartlari
         </h2>
         <p style={styles.paragraph}>
@@ -331,7 +331,7 @@ function TermsAndConditions() {
       {/* 6. To'lov shartlari */}
       <section style={styles.section}>
         <h2 style={styles.sectionHeading}>
-          <span style={styles.sectionIcon}>💳</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#2563eb' }}>credit_card</span>
           6. To'lov shartlari va qaytarish siyosati
         </h2>
         <p style={styles.paragraph}>
@@ -356,7 +356,7 @@ function TermsAndConditions() {
       {/* 7. Mas'uliyat chegaralari */}
       <section style={styles.section}>
         <h2 style={styles.sectionHeading}>
-          <span style={styles.sectionIcon}>⚖️</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#2563eb' }}>gavel</span>
           7. Mas'uliyat chegaralari
         </h2>
         <p style={styles.paragraph}>
@@ -373,7 +373,7 @@ function TermsAndConditions() {
       {/* 8. Nizolarni hal qilish */}
       <section style={styles.section}>
         <h2 style={styles.sectionHeading}>
-          <span style={styles.sectionIcon}>🤝</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#2563eb' }}>handshake</span>
           8. Nizolarni hal qilish
         </h2>
         <p style={styles.paragraph}>
@@ -387,7 +387,7 @@ function TermsAndConditions() {
       {/* 9. Shartlarga o'zgartirishlar kiritish */}
       <section style={styles.section}>
         <h2 style={styles.sectionHeading}>
-          <span style={styles.sectionIcon}>🔄</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#2563eb' }}>update</span>
           9. O'zgartirishlar kiritish tartibi
         </h2>
         <p style={styles.paragraph}>
@@ -400,8 +400,9 @@ function TermsAndConditions() {
 
       {/* Aloqa va rekvizitlar */}
       <div style={styles.contactCard}>
-        <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
-          🏢 Bog'lanish va rekvizitlar
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#2563eb' }}>corporate_fare</span>
+          Bog'lanish va rekvizitlar
         </h3>
         <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#475569' }}>
           Shartlar yoki maxfiylik siyosati yuzasidan savollaringiz bo'lsa, quyidagi aloqa kanallari orqali biz bilan bog'lanishingiz mumkin:

@@ -146,11 +146,11 @@ export default function StudentApp() {
     try {
       const res = await analyticsAPI.submitOnlineExam(activeTakingExam.id, userAnswers);
       setExamResultOutcome(res);
-      triggerToast(`Imtihon topshirildi! Natija: ${res.score}/${res.max_score} ball 🎯`);
+      triggerToast(`Imtihon topshirildi! Natija: ${res.score}/${res.max_score} ball`);
       loadAllStudentData();
     } catch (err) {
       const detail = err.response?.data?.detail || "Imtihonni topshirishda xatolik";
-      triggerToast(`❌ ${detail}`);
+      triggerToast(detail);
     }
     setSubmittingExam(false);
   };
@@ -195,7 +195,7 @@ export default function StudentApp() {
       if (submitFile) formData.append('file', submitFile);
 
       await homeworkAPI.submitHomework(formData);
-      triggerToast("Uy vazifasi topshirildi! O'qituvchi tekshirib coin taqdim etadi 🪙");
+      triggerToast("Uy vazifasi topshirildi! O'qituvchi tekshirib coin taqdim etadi");
       setShowSubmitModalHw(null);
       setSubmitText('');
       setSubmitFile(null);
@@ -203,7 +203,7 @@ export default function StudentApp() {
       setHomeworks(updatedHw);
     } catch (err) {
       const detail = err.response?.data?.detail || "Vazifani topshirishda xatolik";
-      triggerToast(`❌ ${detail}`);
+      triggerToast(detail);
     }
     setSubmittingHw(false);
   };
@@ -245,12 +245,12 @@ export default function StudentApp() {
     setChangingPass(true);
     try {
       await authAPI.changePassword(oldPassword, newPassword);
-      triggerToast("Parolingiz muvaffaqiyatli almashtirildi! 🔒");
+      triggerToast("Parolingiz muvaffaqiyatli almashtirildi!");
       setOldPassword('');
       setNewPassword('');
     } catch (err) {
       const detail = err.response?.data?.detail || "Parolni o'zgartirishda xatolik";
-      triggerToast(`❌ ${detail}`);
+      triggerToast(detail);
     }
     setChangingPass(false);
   };
@@ -262,9 +262,9 @@ export default function StudentApp() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 11) return 'Xayrli tong ☀️';
-    if (hour < 17) return 'Xayrli kun 🌤️';
-    return 'Xayrli kech 🌙';
+    if (hour < 11) return 'Xayrli tong';
+    if (hour < 17) return 'Xayrli kun';
+    return 'Xayrli kech';
   };
 
   const pendingHwCount = homeworks.filter(h => !h.submission).length;
@@ -386,7 +386,7 @@ export default function StudentApp() {
               borderRadius: '50px',
               boxShadow: '0 2px 8px rgba(245,158,11,0.15)'
             }}>
-              <span style={{ fontSize: '14px' }}>🪙</span>
+              <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#d97706' }}>monetization_on</span>
               <span style={{ fontSize: '12px', fontWeight: '900', color: '#d97706' }}>{studentInfo.coins}</span>
             </div>
 
@@ -456,7 +456,9 @@ export default function StudentApp() {
             zIndex: 99
           }}>
             <span>{notificationToast}</span>
-            <button onClick={() => setNotificationToast('')} style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+            <button onClick={() => setNotificationToast('')} style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
+            </button>
           </div>
         )}
 
@@ -507,11 +509,17 @@ export default function StudentApp() {
                   </div>
                   <div style={{ textAlign: 'center', borderLeft: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>
                     <span style={{ fontSize: '10px', opacity: 0.85 }}>Tangalar</span>
-                    <h5 style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: '900' }}>🪙 {studentInfo.coins}</h5>
+                    <h5 style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>monetization_on</span>
+                      {studentInfo.coins}
+                    </h5>
                   </div>
                   <div style={{ textAlign: 'center' }}>
                     <span style={{ fontSize: '10px', opacity: 0.85 }}>Sertifikat</span>
-                    <h5 style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: '900' }}>🎓 {myCertificates.length}</h5>
+                    <h5 style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>workspace_premium</span>
+                      {myCertificates.length}
+                    </h5>
                   </div>
                 </div>
               </div>
@@ -522,7 +530,7 @@ export default function StudentApp() {
                   { id: 'homework', label: 'Vazifalar', icon: 'assignment', color: '#2563eb', bg: '#eff6ff', badge: pendingHwCount > 0 ? pendingHwCount : null },
                   { id: 'attendance', label: 'Davomat', icon: 'calendar_month', color: '#16a34a', bg: '#f0fdf4' },
                   { id: 'finance', label: 'To\'lovlar', icon: 'payments', color: '#d97706', bg: '#fffbeb', badge: billingInfo?.total_debt > 0 ? '!' : null },
-                  { id: 'exams', label: 'Imtihonlar', icon: 'quiz', color: '#7c3aed', bg: '#f5f3ff', badge: activeExamsCount > 0 ? '⚡' : null },
+                  { id: 'exams', label: 'Imtihonlar', icon: 'quiz', color: '#7c3aed', bg: '#f5f3ff', badge: activeExamsCount > 0 ? activeExamsCount : null },
                 ].map(tile => (
                   <button
                     key={tile.id}
@@ -536,7 +544,7 @@ export default function StudentApp() {
                     }}
                   >
                     {tile.badge && (
-                      <span className={tile.badge === '⚡' ? 'pulse-badge' : ''} style={{
+                      <span style={{
                         position: 'absolute', top: '6px', right: '6px',
                         backgroundColor: tile.badge === '!' ? '#dc2626' : '#2563eb',
                         color: '#ffffff', fontSize: '10px', fontWeight: '900',
@@ -565,7 +573,7 @@ export default function StudentApp() {
                   boxShadow: '0 6px 16px rgba(239,68,68,0.2)'
                 }}>
                   <div>
-                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#dc2626', textTransform: 'uppercase' }}>⚡️ JONLI TEST BOSHLANDI</span>
+                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#dc2626', textTransform: 'uppercase' }}>JONLI TEST BOSHLANDI</span>
                     <h5 style={{ margin: '2px 0 0', fontSize: '13px', fontWeight: '900', color: '#991b1b' }}>
                       {myExams.find(e => e.status === 'ACTIVE' && !e.has_submitted)?.title}
                     </h5>
@@ -577,7 +585,7 @@ export default function StudentApp() {
                     }}
                     style={{ padding: '8px 14px', borderRadius: '12px', border: 'none', backgroundColor: '#dc2626', color: '#ffffff', fontWeight: '900', fontSize: '11px', cursor: 'pointer' }}
                   >
-                    Boshlash 🚀
+                    Boshlash
                   </button>
                 </div>
               )}
@@ -585,7 +593,7 @@ export default function StudentApp() {
               {/* RECENT HOMEWORKS */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a' }}>Uy Vazifalari 📝</h4>
+                  <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a' }}>Uy Vazifalari</h4>
                   <button onClick={() => setActiveTab('homework')} style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: '800', fontSize: '11px', cursor: 'pointer' }}>Barchasi →</button>
                 </div>
 
@@ -610,11 +618,11 @@ export default function StudentApp() {
 
                       {isGraded ? (
                         <span style={{ fontSize: '11px', fontWeight: '900', backgroundColor: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: '8px' }}>
-                          +{hw.submission.coins_awarded} 🪙
+                          +{hw.submission.coins_awarded} Coin
                         </span>
                       ) : isPending ? (
                         <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#dbeafe', color: '#1d4ed8', padding: '4px 8px', borderRadius: '8px' }}>
-                          📥 Tekshiruvda
+                          Tekshiruvda
                         </span>
                       ) : (
                         <button
@@ -647,7 +655,7 @@ export default function StudentApp() {
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Uy Vazifalari 📚</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Uy Vazifalari</h3>
                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>Vazifalarni topshiring va coinlar oling</p>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: '800', color: '#2563eb', backgroundColor: darkMode ? '#1e293b' : '#eff6ff', padding: '4px 10px', borderRadius: '50px' }}>
@@ -708,7 +716,7 @@ export default function StudentApp() {
                           <h4 style={{ fontSize: '14px', fontWeight: '900', margin: '6px 0 0', color: darkMode ? '#ffffff' : '#0f172a' }}>{hw.title}</h4>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#fef3c7', padding: '3px 8px', borderRadius: '8px' }}>
-                          <span style={{ fontSize: '12px' }}>🪙</span>
+                          <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#b45309' }}>monetization_on</span>
                           <span style={{ fontSize: '11px', fontWeight: '900', color: '#b45309' }}>max {hw.max_coins}</span>
                         </div>
                       </div>
@@ -739,18 +747,18 @@ export default function StudentApp() {
                       {isGraded ? (
                         <div style={{ padding: '12px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '11px', fontWeight: '900', color: '#166534' }}>✅ Baholandi: {sub.grade} ball</span>
-                            <span style={{ fontSize: '12px', fontWeight: '900', color: '#b45309' }}>+{sub.coins_awarded} Coin 🪙</span>
+                            <span style={{ fontSize: '11px', fontWeight: '900', color: '#166534' }}>Baholandi: {sub.grade} ball</span>
+                            <span style={{ fontSize: '12px', fontWeight: '900', color: '#b45309' }}>+{sub.coins_awarded} Coin</span>
                           </div>
                           {sub.feedback && (
                             <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#15803d' }}>
-                              💬 Ustoz izohi: <i>"{sub.feedback}"</i>
+                              Ustoz izohi: <i>"{sub.feedback}"</i>
                             </p>
                           )}
                         </div>
                       ) : isPending ? (
                         <div style={{ padding: '10px 12px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#1d4ed8' }}>📥 Topshirildi (Tekshiruvda)</span>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#1d4ed8' }}>Topshirildi (Tekshiruvda)</span>
                           <span style={{ fontSize: '10px', color: '#64748b' }}>{sub.submitted_at?.split('T')[0]}</span>
                         </div>
                       ) : (
@@ -786,7 +794,7 @@ export default function StudentApp() {
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Davomat Statistikasi 📊</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Davomat Statistikasi</h3>
                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>Darslarda ishtirok ko'rsatkichi</p>
                 </div>
                 <div style={{ padding: '6px 14px', backgroundColor: '#dcfce7', border: '1px solid #86efac', borderRadius: '50px', fontWeight: '900', fontSize: '13px', color: '#166534' }}>
@@ -821,12 +829,12 @@ export default function StudentApp() {
                 {attendanceData.records.map((rec, idx) => {
                   let statusBg = '#dcfce7';
                   let statusColor = '#166534';
-                  let statusLabel = 'Keldi ✓';
+                  let statusLabel = 'Keldi ✅';
 
                   if (rec.status === 'LATE') {
                     statusBg = '#fef3c7'; statusColor = '#b45309'; statusLabel = 'Kechikdi 🕒';
                   } else if (rec.status === 'ABSENT') {
-                    statusBg = '#fee2e2'; statusColor = '#991b1b'; statusLabel = 'Kelmadi ✕';
+                    statusBg = '#fee2e2'; statusColor = '#991b1b'; statusLabel = 'Kelmadi ❌';
                   } else if (rec.status === 'EXCUSED') {
                     statusBg = '#eff6ff'; statusColor = '#1d4ed8'; statusLabel = 'Sababli 📋';
                   }
@@ -843,7 +851,7 @@ export default function StudentApp() {
                     }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a' }}>📅 {rec.lesson_date}</span>
+                          <span style={{ fontSize: '12px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a' }}>{rec.lesson_date}</span>
                           <span style={{ fontSize: '10px', color: '#64748b' }}>({rec.group_name})</span>
                         </div>
                         <p style={{ margin: '2px 0 0', fontSize: '11px', color: darkMode ? '#cbd5e1' : '#475569' }}>{rec.topic}</p>
@@ -870,7 +878,7 @@ export default function StudentApp() {
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>To'lovlar & Moliya 💳</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>To'lovlar & Moliya</h3>
                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>Oylik to'lov va rasmiy kvitansiyalar</p>
                 </div>
               </div>
@@ -890,7 +898,7 @@ export default function StudentApp() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', opacity: 0.9 }}>Joriy Oy: <strong>{billingInfo.month_for}</strong></span>
                     <span style={{ fontSize: '10px', fontWeight: '900', backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '6px' }}>
-                      {billingInfo.total_debt > 0 ? '⚠️ Qarz mavjud' : '✅ Qarz yo\'q'}
+                      {billingInfo.total_debt > 0 ? 'Qarz mavjud' : 'Qarz yo\'q'}
                     </span>
                   </div>
 
@@ -911,7 +919,7 @@ export default function StudentApp() {
                     </div>
                   ) : (
                     <div style={{ fontSize: '12px', fontWeight: '900', color: '#a7f3d0' }}>
-                      ✓ Ushbu oy uchun to'lov to'liq amalga oshirilgan!
+                      Ushbu oy uchun to'lov to'liq amalga oshirilgan!
                     </div>
                   )}
                 </div>
@@ -937,7 +945,7 @@ export default function StudentApp() {
                         <span style={{ fontSize: '10px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', padding: '2px 6px', borderRadius: '4px' }}>{pay.payment_method}</span>
                       </div>
                       <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>
-                        📅 {pay.created_at?.split('T')[0]} • Oy: {pay.month_for}
+                        {pay.created_at?.split('T')[0]} • Oy: {pay.month_for}
                       </p>
                     </div>
 
@@ -977,7 +985,7 @@ export default function StudentApp() {
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Imtihonlar & Sinovlar 🎯</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Imtihonlar & Sinovlar</h3>
                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>Online testlar va imtihon natijalari</p>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: '800', color: '#7c3aed', backgroundColor: '#f5f3ff', padding: '4px 10px', borderRadius: '50px' }}>
@@ -1004,7 +1012,7 @@ export default function StudentApp() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                           <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 8px', borderRadius: '6px', backgroundColor: e.exam_type === 'ONLINE' ? '#eff6ff' : '#f5f3ff', color: e.exam_type === 'ONLINE' ? '#1d4ed8' : '#7c3aed' }}>
-                            {e.exam_type === 'ONLINE' ? '🌐 Online Test' : '📝 Offline'}
+                            {e.exam_type === 'ONLINE' ? 'Online Test' : 'Offline'}
                           </span>
                           <h4 style={{ fontSize: '14px', fontWeight: '900', margin: '6px 0 0', color: darkMode ? '#ffffff' : '#0f172a' }}>{e.title}</h4>
                           <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>Guruh: {e.group_name}</p>
@@ -1015,28 +1023,28 @@ export default function StudentApp() {
                           backgroundColor: isActive ? '#dbeafe' : isScheduled ? '#fef3c7' : '#dcfce7',
                           color: isActive ? '#1d4ed8' : isScheduled ? '#b45309' : '#166534'
                         }}>
-                          {isActive ? '⚡️ Jonli' : isScheduled ? '⏳ Kutilmoqda' : '✅ Yakunlangan'}
+                          {isActive ? 'Jonli' : isScheduled ? 'Kutilmoqda' : 'Yakunlangan'}
                         </span>
                       </div>
 
                       <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${darkMode ? '#334155' : '#f1f5f9'}`, paddingTop: '8px' }}>
-                        <span>📅 {e.exam_date}</span>
-                        <span>⏱️ {e.duration_minutes || 30} daqiqa</span>
-                        <span>🎯 O'tish: <strong style={{ color: '#16a34a' }}>{e.pass_score}</strong>/{e.max_score}</span>
+                        <span>Sana: {e.exam_date}</span>
+                        <span>Vaqt: {e.duration_minutes || 30} daqiqa</span>
+                        <span>O'tish: <strong style={{ color: '#16a34a' }}>{e.pass_score}</strong>/{e.max_score}</span>
                       </div>
 
                       {/* SUBMITTED OR START TEST BUTTON */}
                       {e.has_submitted ? (
                         <div style={{ padding: '10px 12px', backgroundColor: e.is_passed ? '#f0fdf4' : '#fef2f2', border: `1px solid ${e.is_passed ? '#86efac' : '#fecaca'}`, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '11px', fontWeight: '900', color: e.is_passed ? '#166534' : '#991b1b' }}>
-                            {e.is_passed ? '🎉 O\'tdingiz' : '❌ O\'tmadingiz'} • Ball: {e.my_score}/{e.max_score}
+                            {e.is_passed ? 'O\'tdingiz' : 'O\'tmadingiz'} • Ball: {e.my_score}/{e.max_score}
                           </span>
                           {e.certificate_code && (
                             <button
                               onClick={() => setActiveTab('certs')}
                               style={{ padding: '4px 8px', borderRadius: '6px', border: 'none', backgroundColor: '#16a34a', color: '#ffffff', fontWeight: '800', fontSize: '10px', cursor: 'pointer' }}
                             >
-                              Sertifikat 🎓
+                              Sertifikat
                             </button>
                           )}
                         </div>
@@ -1069,7 +1077,7 @@ export default function StudentApp() {
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Mening Sertifikatlarim 🎓</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Mening Sertifikatlarim</h3>
                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>Rasmiy bitiruv sertifikatlari</p>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: '800', color: '#16a34a', backgroundColor: '#dcfce7', padding: '4px 10px', borderRadius: '50px' }}>
@@ -1127,7 +1135,7 @@ export default function StudentApp() {
           {/* ============================================================ */}
           {activeTab === 'profile' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Mening Profilim 👤</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a', margin: 0 }}>Mening Profilim</h3>
               
               <div style={{
                 padding: '16px',
@@ -1144,7 +1152,11 @@ export default function StudentApp() {
                 <p style={{ margin: 0 }}><strong>Telefon:</strong> {studentInfo.phone || 'Kiritilmagan'}</p>
                 <p style={{ margin: 0 }}><strong>Ota-ona telefoni:</strong> {studentInfo.parentPhone || 'Kiritilmagan'}</p>
                 <p style={{ margin: 0 }}><strong>Guruh:</strong> {studentInfo.group}</p>
-                <p style={{ margin: 0 }}><strong>Tangalar:</strong> 🪙 {studentInfo.coins} Coin</p>
+                <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <strong>Tangalar:</strong> 
+                  <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#d97706' }}>monetization_on</span>
+                  {studentInfo.coins} Coin
+                </p>
               </div>
 
               <button 
@@ -1164,7 +1176,7 @@ export default function StudentApp() {
                 flexDirection: 'column',
                 gap: '10px'
               }}>
-                <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a' }}>🔒 Parolni Yangilash</h4>
+                <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '900', color: darkMode ? '#ffffff' : '#0f172a' }}>Parolni Yangilash</h4>
                 <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <input
                     type="password"
@@ -1229,7 +1241,7 @@ export default function StudentApp() {
             { id: 'homework', label: 'Vazifa', icon: 'assignment', badge: pendingHwCount > 0 ? pendingHwCount : null },
             { id: 'attendance', label: 'Davomat', icon: 'calendar_month' },
             { id: 'finance', label: 'To\'lov', icon: 'payments' },
-            { id: 'exams', label: 'Imtihon', icon: 'quiz', badge: activeExamsCount > 0 ? '⚡' : null },
+            { id: 'exams', label: 'Imtihon', icon: 'quiz', badge: activeExamsCount > 0 ? activeExamsCount : null },
             { id: 'certs', label: 'Sertifikat', icon: 'workspace_premium' },
             { id: 'profile', label: 'Profil', icon: 'person' }
           ].map(tab => {
@@ -1420,8 +1432,10 @@ export default function StudentApp() {
             {/* If Results received */}
             {examResultOutcome ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'center', padding: '16px 0' }}>
-                <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: examResultOutcome.is_passed ? '#dcfce7' : '#fee2e2', color: examResultOutcome.is_passed ? '#166534' : '#991b1b', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', fontSize: '36px' }}>
-                  {examResultOutcome.is_passed ? '🎓' : '📝'}
+                <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: examResultOutcome.is_passed ? '#dcfce7' : '#fee2e2', color: examResultOutcome.is_passed ? '#166534' : '#991b1b', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '36px' }}>
+                    {examResultOutcome.is_passed ? 'school' : 'quiz'}
+                  </span>
                 </div>
                 <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>
                   {examResultOutcome.is_passed ? "Tabriklaymiz! Siz o'tdingiz!" : "Imtihon yakunlandi"}
@@ -1437,8 +1451,9 @@ export default function StudentApp() {
 
                 {examResultOutcome.certificate_awarded && (
                   <div style={{ backgroundColor: '#f0fdf4', border: '2px solid #86efac', borderRadius: '16px', padding: '14px', textAlign: 'left' }}>
-                    <p style={{ margin: 0, fontWeight: '900', color: '#166534', fontSize: '13px' }}>
-                      🎉 Sizga rasmiy sertifikat berildi!
+                    <p style={{ margin: 0, fontWeight: '900', color: '#166534', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>verified</span>
+                      Sizga rasmiy sertifikat berildi!
                     </p>
                     <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#15803d' }}>
                       Sertifikat kodi: <strong>{examResultOutcome.certificate_code}</strong>
@@ -1527,7 +1542,7 @@ export default function StudentApp() {
                     disabled={submittingExam}
                     style={{ flex: 2, padding: '12px', borderRadius: '12px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', cursor: submittingExam ? 'not-allowed' : 'pointer', fontSize: '13px' }}
                   >
-                    {submittingExam ? 'Tekshirilmoqda...' : '🏁 Topshirish va Yakunlash'}
+                    {submittingExam ? 'Tekshirilmoqda...' : 'Topshirish va Yakunlash'}
                   </button>
                 </div>
               </form>
@@ -1576,7 +1591,7 @@ export default function StudentApp() {
                 <div style={{ textAlign: 'left', fontSize: '11px', color: '#78350f' }}>
                   <p style={{ margin: 0 }}><strong>Seriya:</strong> {selectedCertView.certificate_code}</p>
                   <p style={{ margin: '2px 0 0' }}><strong>Sana:</strong> {selectedCertView.issue_date?.split('T')[0]}</p>
-                  <p style={{ margin: '2px 0 0', color: '#16a34a', fontWeight: '800' }}>✓ Haqiqiy (Verified)</p>
+                  <p style={{ margin: '2px 0 0', color: '#16a34a', fontWeight: '800' }}>Haqiqiy (Verified)</p>
                 </div>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '6px', borderRadius: '10px', border: '1px solid #fde68a' }}>
@@ -1616,7 +1631,7 @@ export default function StudentApp() {
       {showCardModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(6px)', zIndex: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div className="animate-fade-in" style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '28px', maxWidth: '380px', width: '100%', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', textAlign: 'center' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a', margin: 0 }}>Digital Student Card 📱</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a', margin: 0 }}>Digital Student Card</h3>
             <div style={{ width: '100%', padding: '20px', background: 'linear-gradient(135deg, #1d4ed8, #2563eb)', borderRadius: '20px', color: '#ffffff', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
               <div style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: '#ffffff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '20px' }}>
                 {studentInfo.name.charAt(0)}
@@ -1647,7 +1662,9 @@ export default function StudentApp() {
                 <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#0f172a', margin: 0 }}>Uy Vazifasini Topshirish</h3>
                 <span style={{ fontSize: '11px', color: '#64748b' }}>{showSubmitModalHw.title}</span>
               </div>
-              <button onClick={() => setShowSubmitModalHw(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '18px' }}>✕</button>
+              <button onClick={() => setShowSubmitModalHw(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+              </button>
             </div>
 
             <form onSubmit={handleSubmitHomework} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
