@@ -1125,8 +1125,15 @@ export default function TeacherDashboard() {
                                 <td style={{ padding: '12px 16px', color: '#64748b' }}>{idx + 1}</td>
                                 <td style={{ padding: '12px 16px', fontWeight: '800', color: '#2563eb' }}>{s.login_id}</td>
                                 <td style={{ padding: '12px 16px', fontWeight: '700', color: '#0f172a' }}>{s.full_name}</td>
-                                <td style={{ padding: '12px 16px' }}>{s.phone}</td>
-                                <td style={{ padding: '12px 16px', color: '#64748b' }}>{s.parent_phone || "Mavjud emas"}</td>
+                                <td style={{ padding: '12px 16px' }}>{s.phone || "—"}</td>
+                                <td style={{ padding: '12px 16px', color: '#64748b' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
+                                    {s.father_phone && <div>👨 Otasi: {s.father_phone}</div>}
+                                    {s.mother_phone && <div>👩 Onasi: {s.mother_phone}</div>}
+                                    {!s.father_phone && !s.mother_phone && s.parent_phone && <div>👪 Ota-ona: {s.parent_phone}</div>}
+                                    {!s.father_phone && !s.mother_phone && !s.parent_phone && <span>Mavjud emas</span>}
+                                  </div>
+                                </td>
                                 <td style={{ padding: '12px 16px' }}>
                                   {s.telegram_chat_id ? (
                                     <span style={{ fontSize: '11px', backgroundColor: '#e0f2fe', color: '#0284c7', padding: '2px 8px', borderRadius: '6px', fontWeight: '800' }}>Ulangan 📲</span>
@@ -1574,7 +1581,7 @@ export default function TeacherDashboard() {
                                     {s.full_name} <span style={{ color: '#2563eb', fontSize: '12px' }}>(ID: {s.login_id})</span>
                                   </p>
                                   <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#64748b' }}>
-                                    📞 {s.phone} {s.parent_phone ? `• Ota-ona: ${s.parent_phone}` : ''}
+                                    📞 {s.phone || 'Shaxsiy raqam yo\'q'} {s.father_phone ? `• 👨 Otasi: ${s.father_phone}` : ''} {s.mother_phone ? `• 👩 Onasi: ${s.mother_phone}` : ''} {!s.father_phone && !s.mother_phone && s.parent_phone ? `• 👪 Ota-ona: ${s.parent_phone}` : ''}
                                   </p>
                                 </div>
 
@@ -1906,8 +1913,15 @@ export default function TeacherDashboard() {
                     <tr key={s.id} style={{ borderBottom: '1px solid #eff6ff' }}>
                       <td style={{ padding: '12px 16px', fontWeight: '800', color: '#2563eb' }}>{s.login_id}</td>
                       <td style={{ padding: '12px 16px', fontWeight: '700' }}>{s.full_name}</td>
-                      <td style={{ padding: '12px 16px' }}>{s.phone}</td>
-                      <td style={{ padding: '12px 16px', color: '#64748b' }}>{s.parent_phone || "Mavjud emas"}</td>
+                      <td style={{ padding: '12px 16px' }}>{s.phone || "—"}</td>
+                      <td style={{ padding: '12px 16px', color: '#64748b' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
+                          {s.father_phone && <div>👨 Otasi: {s.father_phone}</div>}
+                          {s.mother_phone && <div>👩 Onasi: {s.mother_phone}</div>}
+                          {!s.father_phone && !s.mother_phone && s.parent_phone && <div>👪 Ota-ona: {s.parent_phone}</div>}
+                          {!s.father_phone && !s.mother_phone && !s.parent_phone && <span>Mavjud emas</span>}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   {(selectedGroupDetail.students || selectedGroupDetail.studentsList || []).length === 0 && (

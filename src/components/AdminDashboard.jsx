@@ -43,6 +43,8 @@ export default function AdminDashboard() {
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [leadsFilterStatus, setLeadsFilterStatus] = useState('ALL');
   const [leadsSearch, setLeadsSearch] = useState('');
+  const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
 
   // Modals
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -102,6 +104,7 @@ export default function AdminDashboard() {
     let cleaned = phoneStr.trim().replace(/[^\d+]/g, '');
     if (!cleaned || cleaned === '+') return null;
     let digits = cleaned.replace(/\+/g, '');
+    if (digits.length < 9) return null;
     if (digits.length === 9) {
       return `+998${digits}`;
     }
@@ -459,6 +462,7 @@ export default function AdminDashboard() {
       triggerNotification(res.message || "Lead holati yangilandi!");
       if (res.new_login_id) {
         triggerNotification(`O'quvchi yaratildi! Login: ${res.new_login_id}, Parol: ${res.temp_password}`);
+        await fetchData();
       }
       await fetchLeads();
     } catch (e) {
@@ -521,22 +525,32 @@ export default function AdminDashboard() {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0' }}>Konsultatsiya So'rovlari</h2>
-            <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>Saytdan kelgan bepul konsultatsiya so'rovlari</p>
+            <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0' }}>Konsultatsiyalar va Qabul</h2>
+            <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>Saytdan kelgan va markazga tashrif buyurgan yangi o'quvchilar / talabgorlar ro'yxati</p>
           </div>
-          <button onClick={fetchLeads} disabled={leadsLoading} style={{
-            padding: '10px 20px', borderRadius: '12px', border: '1px solid #bfdbfe',
-            backgroundColor: '#eff6ff', color: '#2563eb', fontWeight: '800', fontSize: '14px',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
-          }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>refresh</span>
-            {leadsLoading ? 'Yuklanmoqda...' : 'Yangilash'}
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button onClick={() => setShowAddLeadModal(true)} style={{
+              padding: '10px 20px', borderRadius: '12px', border: 'none',
+              backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '800', fontSize: '14px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(37,99,235,0.2)'
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person_add</span>
+              Yangi Qabul / Ariza Qo'shish
+            </button>
+            <button onClick={fetchLeads} disabled={leadsLoading} style={{
+              padding: '10px 16px', borderRadius: '12px', border: '1px solid #bfdbfe',
+              backgroundColor: '#eff6ff', color: '#2563eb', fontWeight: '800', fontSize: '14px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>refresh</span>
+              {leadsLoading ? '...' : 'Yangilash'}
+            </button>
+          </div>
         </div>
 
         {/* KPI Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          <KpiCard title="Jami so'rovlar" value={leads.length} change="Barcha so'rovlar" icon="inbox" />
+          <KpiCard title="Jami so'rovlar" value={leads.length} change="Barcha arizalar" icon="inbox" />
           <KpiCard title="Yangi (kutilmoqda)" value={newCount} change="Javob berilmagan" icon="mark_email_unread" />
           <KpiCard title="Bog'lanildi" value={contactedCount} change="Jarayonda" icon="phone_in_talk" />
           <KpiCard title="Ro'yxatdan o'tdi" value={enrolledCount} change="Muvaffaqiyatli" icon="how_to_reg" />
@@ -590,7 +604,7 @@ export default function AdminDashboard() {
                 <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>#</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>F.I.O</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Telefon</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Telefon Raqamlar</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Fan</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Holat</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Sana</th>
@@ -625,7 +639,26 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                       <td style={{ padding: '14px 16px' }}>
-                        <a href={`tel:${lead.phone}`} style={{ color: '#2563eb', fontWeight: '700', fontSize: '13px' }}>{lead.phone}</a>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          {lead.phone && (
+                            <a href={`tel:${lead.phone}`} style={{ color: '#2563eb', fontWeight: '700', fontSize: '13px', textDecoration: 'none' }}>
+                              📞 {lead.phone}
+                            </a>
+                          )}
+                          {lead.father_phone && (
+                            <a href={`tel:${lead.father_phone}`} style={{ color: '#475569', fontWeight: '600', fontSize: '12px', textDecoration: 'none' }}>
+                              👨 Otasi: {lead.father_phone}
+                            </a>
+                          )}
+                          {lead.mother_phone && (
+                            <a href={`tel:${lead.mother_phone}`} style={{ color: '#475569', fontWeight: '600', fontSize: '12px', textDecoration: 'none' }}>
+                              👩 Onasi: {lead.mother_phone}
+                            </a>
+                          )}
+                          {!lead.phone && !lead.father_phone && !lead.mother_phone && (
+                            <span style={{ color: '#94a3b8', fontSize: '12px' }}>— Raqam yo'q</span>
+                          )}
+                        </div>
                       </td>
                       <td style={{ padding: '14px 16px', color: '#475569', fontSize: '13px' }}>{courseName}</td>
                       <td style={{ padding: '14px 16px' }}>
@@ -821,7 +854,24 @@ export default function AdminDashboard() {
               <tr key={u.id} style={{ borderBottom: '1px solid #eff6ff' }}>
                 <td style={{ padding: '16px', fontWeight: '800' }}>{u.login_id}</td>
                 <td style={{ padding: '16px' }}>{u.full_name}</td>
-                <td style={{ padding: '16px' }}>{u.phone}</td>
+                <td style={{ padding: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {u.phone ? (
+                      <span style={{ fontWeight: '700', color: '#0f172a' }}>📞 {u.phone}</span>
+                    ) : (
+                      <span style={{ color: '#94a3b8', fontSize: '13px' }}>— Shaxsiy raqam yo'q</span>
+                    )}
+                    {u.father_phone && (
+                      <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>👨 Otasi: {u.father_phone}</span>
+                    )}
+                    {u.mother_phone && (
+                      <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>👩 Onasi: {u.mother_phone}</span>
+                    )}
+                    {!u.father_phone && !u.mother_phone && u.parent_phone && (
+                      <span style={{ fontSize: '12px', color: '#475569' }}>👪 Ota-ona: {u.parent_phone}</span>
+                    )}
+                  </div>
+                </td>
                 <td style={{ padding: '16px' }}>{u.role}</td>
                 <td style={{ padding: '16px' }}>
                   <span style={{
@@ -2953,13 +3003,14 @@ export default function AdminDashboard() {
       {/* MODALS */}
       {showAddUserModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '420px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '460px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
             <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>Yangi Foydalanuvchi</h3>
             <form onSubmit={async e => {
               e.preventDefault();
               const full_name = e.target.fullname.value.trim();
               const rawPhone = e.target.phone.value;
-              const rawParentPhone = e.target.parent_phone.value;
+              const rawFatherPhone = e.target.father_phone.value;
+              const rawMotherPhone = e.target.mother_phone.value;
               const password = e.target.password.value ? e.target.password.value.trim() : '123456';
               const role = e.target.role.value;
 
@@ -2969,16 +3020,20 @@ export default function AdminDashboard() {
               }
 
               const phone = normalizePhone(rawPhone);
-              if (!phone || phone.length < 9) {
-                triggerNotification("Telefon raqami noto'g'ri kiritildi! Masalan: +998901234567");
-                return;
-              }
-
-              const parent_phone = normalizePhone(rawParentPhone);
+              const father_phone = normalizePhone(rawFatherPhone);
+              const mother_phone = normalizePhone(rawMotherPhone);
 
               setUserSubmitting(true);
               try {
-                const res = await usersAPI.createUser({ full_name, phone, parent_phone, role, password });
+                const res = await usersAPI.createUser({
+                  full_name,
+                  phone,
+                  father_phone,
+                  mother_phone,
+                  parent_phone: father_phone || mother_phone,
+                  role,
+                  password
+                });
                 if (res && res.id) {
                   setUsers(prev => [res, ...prev]);
                   triggerNotification(`Yangi ${role === 'STUDENT' ? "o'quvchi" : role === 'TEACHER' ? "o'qituvchi" : "admin"} muvaffaqiyatli qo'shildi! ID: ${res.login_id} ✅`);
@@ -2994,12 +3049,20 @@ export default function AdminDashboard() {
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ism va familiya *</label>
               <input name="fullname" type="text" placeholder="Masalan: Ali Valiyev" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
               
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Telefon raqam *</label>
-              <input name="phone" type="tel" defaultValue="+998" placeholder="+998901234567" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Telefon raqam (shaxsiy, ixtiyoriy)</label>
+              <input name="phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
               
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ota-ona telefon raqami (ixtiyoriy)</label>
-              <input name="parent_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
-              
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👨 Otasining telefoni (ixtiyoriy)</label>
+                  <input name="father_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👩 Onasining telefoni (ixtiyoriy)</label>
+                  <input name="mother_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+                </div>
+              </div>
+
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Parol (bo'sh qoldirilsa: 123456)</label>
               <input name="password" type="text" placeholder="Standart: 123456" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
               
@@ -3023,7 +3086,7 @@ export default function AdminDashboard() {
 
       {editUserModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '420px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '460px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
             <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>Tahrirlash: {editUserModal.full_name}</h3>
             <p style={{ fontSize: '13px', color: '#2563eb', fontWeight: '800', marginBottom: '20px' }}>ID: {editUserModal.login_id}</p>
             
@@ -3031,7 +3094,8 @@ export default function AdminDashboard() {
               e.preventDefault();
               const full_name = e.target.fullname.value.trim();
               const rawPhone = e.target.phone.value;
-              const rawParentPhone = e.target.parent_phone.value;
+              const rawFatherPhone = e.target.father_phone.value;
+              const rawMotherPhone = e.target.mother_phone.value;
               const role = e.target.role.value;
 
               if (!full_name) {
@@ -3040,13 +3104,16 @@ export default function AdminDashboard() {
               }
 
               const phone = normalizePhone(rawPhone);
-              if (!phone || phone.length < 9) {
-                triggerNotification("Telefon raqami noto'g'ri kiritildi! Masalan: +998901234567");
-                return;
-              }
-
-              const parent_phone = normalizePhone(rawParentPhone);
-              const updateData = { full_name, phone, parent_phone, role };
+              const father_phone = normalizePhone(rawFatherPhone);
+              const mother_phone = normalizePhone(rawMotherPhone);
+              const updateData = {
+                full_name,
+                phone,
+                father_phone,
+                mother_phone,
+                parent_phone: father_phone || mother_phone || editUserModal.parent_phone,
+                role
+              };
 
               setUserSubmitting(true);
               try {
@@ -3064,12 +3131,20 @@ export default function AdminDashboard() {
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ism va familiya *</label>
               <input name="fullname" defaultValue={editUserModal.full_name} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
               
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Telefon raqam *</label>
-              <input name="phone" type="tel" defaultValue={editUserModal.phone || '+998'} required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Telefon raqam (shaxsiy, ixtiyoriy)</label>
+              <input name="phone" type="tel" defaultValue={editUserModal.phone || '+998'} style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
               
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Ota-ona telefon raqami</label>
-              <input name="parent_phone" type="tel" defaultValue={editUserModal.parent_phone || '+998'} style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
-              
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👨 Otasining telefoni</label>
+                  <input name="father_phone" type="tel" defaultValue={editUserModal.father_phone || '+998'} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👩 Onasining telefoni</label>
+                  <input name="mother_phone" type="tel" defaultValue={editUserModal.mother_phone || '+998'} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+                </div>
+              </div>
+
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Rol (lavozim) *</label>
               <select name="role" defaultValue={editUserModal.role} style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontWeight: '700' }}>
                 <option value="STUDENT">O'quvchi</option>
@@ -3081,6 +3156,102 @@ export default function AdminDashboard() {
                 <button type="button" onClick={() => setEditUserModal(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
                 <button type="submit" disabled={userSubmitting} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: userSubmitting ? '#93c5fd' : '#2563eb', color: '#fff', cursor: userSubmitting ? 'not-allowed' : 'pointer', fontWeight: '800' }}>
                   {userSubmitting ? "Saqlanmoqda..." : "Saqlash"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showAddLeadModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '460px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>Yangi Qabul / Ariza Qo'shish</h3>
+            <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 20px 0' }}>Markazga kelgan yangi o'quvchi yoki murojaatni ro'yxatga olish</p>
+            <form onSubmit={async e => {
+              e.preventDefault();
+              const full_name = e.target.fullname.value.trim();
+              const rawPhone = e.target.phone.value;
+              const rawFatherPhone = e.target.father_phone.value;
+              const rawMotherPhone = e.target.mother_phone.value;
+              const course_id = e.target.course_id.value ? parseInt(e.target.course_id.value) : null;
+              const status = e.target.status.value;
+              const notes = e.target.notes.value.trim();
+
+              if (!full_name) {
+                triggerNotification("Iltimos, ism va familiyani kiriting!");
+                return;
+              }
+
+              const phone = normalizePhone(rawPhone);
+              const father_phone = normalizePhone(rawFatherPhone);
+              const mother_phone = normalizePhone(rawMotherPhone);
+
+              setLeadSubmitting(true);
+              try {
+                const leadData = {
+                  full_name,
+                  phone,
+                  father_phone,
+                  mother_phone,
+                  course_id,
+                  notes: notes || "Qabul xizmati orqali kiritildi"
+                };
+                const createdLead = await crmAPI.createLead(leadData);
+                if (status !== 'NEW' && createdLead && createdLead.id) {
+                  await handleUpdateLeadStatus(createdLead.id, status, notes);
+                } else {
+                  triggerNotification("Yangi ariza muvaffaqiyatli qo'shildi! ✅");
+                  await fetchLeads();
+                }
+                setShowAddLeadModal(false);
+              } catch (err) {
+                const detail = err.response?.data?.detail || "Ariza qo'shishda xatolik yuz berdi";
+                triggerNotification(detail);
+              } finally {
+                setLeadSubmitting(false);
+              }
+            }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>F.I.O (Ism va familiya) *</label>
+              <input name="fullname" type="text" placeholder="Masalan: Sardor Aliyev" required style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>O'quvchining o'z telefoni (ixtiyoriy)</label>
+              <input name="phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👨 Otasining telefoni (ixtiyoriy)</label>
+                  <input name="father_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>👩 Onasining telefoni (ixtiyoriy)</label>
+                  <input name="mother_phone" type="tel" defaultValue="+998" placeholder="+998901234567" style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc' }} />
+                </div>
+              </div>
+
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Qiziqayotgan fan / kurs</label>
+              <select name="course_id" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontWeight: '700' }}>
+                <option value="">Fanni tanlang (ixtiyoriy)</option>
+                {courses.map(c => (
+                  <option key={c.id} value={c.id}>{c.title} ({c.price_monthly.toLocaleString()} UZS)</option>
+                ))}
+              </select>
+
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Dastlabki holat</label>
+              <select name="status" defaultValue="NEW" style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontWeight: '700' }}>
+                <option value="NEW">Yangi (So'rov qabul qilindi)</option>
+                <option value="CONTACTED">Bog'lanildi (Muloqotda)</option>
+                <option value="TRIAL_SCHEDULED">Sinov darsiga yozildi</option>
+                <option value="ENROLLED">To'g'ridan-to'g'ri Qabul qilish</option>
+              </select>
+
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Izoh / Murojaat manbasi</label>
+              <textarea name="notes" placeholder="Masalan: Markazga keldi, Instagram orqali..." style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', minHeight: '60px', resize: 'none' }}></textarea>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" onClick={() => setShowAddLeadModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
+                <button type="submit" disabled={leadSubmitting} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: leadSubmitting ? '#93c5fd' : '#2563eb', color: '#fff', cursor: leadSubmitting ? 'not-allowed' : 'pointer', fontWeight: '800' }}>
+                  {leadSubmitting ? "Saqlanmoqda..." : "Saqlash"}
                 </button>
               </div>
             </form>
@@ -4443,7 +4614,15 @@ export default function AdminDashboard() {
                     <tr key={s.id} style={{ borderBottom: '1px solid #eff6ff' }}>
                       <td style={{ padding: '12px 16px', fontWeight: '800', color: '#2563eb' }}>{s.login_id || s.id}</td>
                       <td style={{ padding: '12px 16px', fontWeight: '700' }}>{s.full_name || "O'quvchi"}</td>
-                      <td style={{ padding: '12px 16px' }}>{s.phone || '-'}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
+                          {s.phone && <div style={{ fontWeight: '700' }}>📞 {s.phone}</div>}
+                          {s.father_phone && <div style={{ color: '#475569' }}>👨 Otasi: {s.father_phone}</div>}
+                          {s.mother_phone && <div style={{ color: '#475569' }}>👩 Onasi: {s.mother_phone}</div>}
+                          {!s.father_phone && !s.mother_phone && s.parent_phone && <div style={{ color: '#475569' }}>👪 Ota-ona: {s.parent_phone}</div>}
+                          {!s.phone && !s.father_phone && !s.mother_phone && !s.parent_phone && <span style={{ color: '#94a3b8' }}>—</span>}
+                        </div>
+                      </td>
                       <td style={{ padding: '12px 16px' }}>
                         {s.discount_type === 'GRANT_100' ? (
                           <span style={{ fontSize: '11px', backgroundColor: '#dcfce7', color: '#166534', padding: '3px 8px', borderRadius: '6px', fontWeight: '800' }}>100% Grant (0 UZS)</span>
