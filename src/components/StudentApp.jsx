@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { analyticsAPI, certificatesAPI, homeworkAPI, attendanceAPI, financeAPI, authAPI } from '../api';
+import { formatMonthUz, formatPaymentMethodUz } from '../utils/formatters';
 
 export default function StudentApp() {
   const [activeTab, setActiveTab] = useState('home');
@@ -896,7 +897,7 @@ export default function StudentApp() {
                   boxShadow: '0 8px 20px rgba(13,148,136,0.25)'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', opacity: 0.9 }}>Joriy Oy: <strong>{billingInfo.month_for}</strong></span>
+                    <span style={{ fontSize: '11px', opacity: 0.9 }}>Joriy Oy: <strong>{formatMonthUz(billingInfo.month_for)}</strong></span>
                     <span style={{ fontSize: '10px', fontWeight: '900', backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '6px' }}>
                       {billingInfo.total_debt > 0 ? 'Qarz mavjud' : 'Qarz yo\'q'}
                     </span>
@@ -942,10 +943,10 @@ export default function StudentApp() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontSize: '13px', fontWeight: '900', color: '#16a34a' }}>+{pay.amount?.toLocaleString()} so'm</span>
-                        <span style={{ fontSize: '10px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', padding: '2px 6px', borderRadius: '4px' }}>{pay.payment_method}</span>
+                        <span style={{ fontSize: '10px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', padding: '2px 6px', borderRadius: '4px' }}>{formatPaymentMethodUz(pay.payment_method)}</span>
                       </div>
                       <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>
-                        {pay.created_at?.split('T')[0]} • Oy: {pay.month_for}
+                        {pay.created_at?.split('T')[0]} • Oy: {formatMonthUz(pay.month_for)}
                       </p>
                     </div>
 
@@ -1346,12 +1347,12 @@ export default function StudentApp() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748b' }}>To'lov Oyi:</span>
-                  <strong>{selectedReceipt.month_for}</strong>
+                  <strong>{formatMonthUz(selectedReceipt.month_for)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748b' }}>To'lov Turi:</span>
                   <span style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', fontSize: '11px' }}>
-                    {selectedReceipt.payment_method}
+                    {formatPaymentMethodUz(selectedReceipt.payment_method)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>

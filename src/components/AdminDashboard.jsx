@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usersAPI, financeAPI, attendanceAPI, analyticsAPI, coursesAPI, groupsAPI, certificatesAPI, reportsAPI, crmAPI } from '../api';
+import { formatMonthUz, formatPaymentMethodUz } from '../utils/formatters';
 
 const KpiCard = ({ title, value, change, icon }) => (
   <div style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative', overflow: 'hidden' }}>
@@ -283,8 +284,8 @@ export default function AdminDashboard() {
   };
 
   const handleSaveMarkAttendance = async (e) => {
-    e.preventDefault();
-    if (!adminMarkModalLesson || !groupJournalData) return;
+    if (e) e.preventDefault();
+    if (!adminMarkModalLesson || !groupJournalData || adminMarkSaving) return;
     setAdminMarkSaving(true);
     try {
       const attendancesPayload = groupJournalData.students.map(s => ({
@@ -308,8 +309,9 @@ export default function AdminDashboard() {
       if (Array.isArray(gSum)) setGroupsAttendanceSummary(gSum);
     } catch(err) {
       triggerNotification("Davomatni saqlashda xatolik yuz berdi");
+    } finally {
+      setAdminMarkSaving(false);
     }
-    setAdminMarkSaving(false);
   };
 
   const handleCreateLessonAndOpenJournal = async (e) => {
@@ -766,7 +768,7 @@ export default function AdminDashboard() {
                     {st ? st.full_name : `O'quvchi #${p.student_id}`}
                   </p>
                   <span style={{ fontSize: '12px', color: '#64748b' }}>
-                    {p.month_for || p.month || ''} • {p.payment_method || 'CASH'}
+                    {formatMonthUz(p.month_for || p.month)} • {formatPaymentMethodUz(p.payment_method)}
                   </span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -1273,12 +1275,12 @@ export default function AdminDashboard() {
                     <td style={{ padding: '14px 16px', fontWeight: '900', color: '#2563eb' }}>{(p.amount || 0).toLocaleString()} UZS</td>
                     <td style={{ padding: '14px 16px' }}>
                       <span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontWeight: '700', fontSize: '13px' }}>
-                        {p.month_for || p.month || '-'}
+                        {formatMonthUz(p.month_for || p.month) || '-'}
                       </span>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <span style={{ fontSize: '12px', padding: '4px 8px', borderRadius: '6px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800' }}>
-                        {p.payment_method || p.method || 'CASH'}
+                        {formatPaymentMethodUz(p.payment_method || p.method)}
                       </span>
                     </td>
                     <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -2853,10 +2855,10 @@ export default function AdminDashboard() {
                       </td>
                       <td style={{ padding: '14px 16px' }}>
                         <span style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '4px 10px', borderRadius: '6px', fontWeight: '800', fontSize: '11px' }}>
-                          {p.payment_method}
+                          {formatPaymentMethodUz(p.payment_method)}
                         </span>
                       </td>
-                      <td style={{ padding: '14px 16px' }}>{p.month_for}</td>
+                      <td style={{ padding: '14px 16px' }}>{formatMonthUz(p.month_for)}</td>
                       <td style={{ padding: '14px 16px', color: '#64748b' }}>{p.note || '-'}</td>
                       <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                         <button
@@ -3106,6 +3108,7 @@ export default function AdminDashboard() {
               const phone = normalizePhone(rawPhone);
               const father_phone = normalizePhone(rawFatherPhone);
               const mother_phone = normalizePhone(rawMotherPhone);
+              const newPassword = e.target.new_password?.value?.trim();
               const updateData = {
                 full_name,
                 phone,
@@ -3114,6 +3117,9 @@ export default function AdminDashboard() {
                 parent_phone: father_phone || mother_phone || editUserModal.parent_phone,
                 role
               };
+              if (newPassword) {
+                updateData.password = newPassword;
+              }
 
               setUserSubmitting(true);
               try {
@@ -3146,11 +3152,14 @@ export default function AdminDashboard() {
               </div>
 
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Rol (lavozim) *</label>
-              <select name="role" defaultValue={editUserModal.role} style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontWeight: '700' }}>
+              <select name="role" defaultValue={editUserModal.role} style={{ width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontWeight: '700' }}>
                 <option value="STUDENT">O'quvchi</option>
                 <option value="TEACHER">O'qituvchi</option>
                 <option value="ADMIN">Admin</option>
               </select>
+
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Yangi parol (bo'sh qoldirilsa o'zgarmaydi)</label>
+              <input name="new_password" type="text" placeholder="Yangi parolni kiriting..." style={{ width: '100%', padding: '12px', marginBottom: '24px', borderRadius: '12px', border: '1px solid #f59e0b', background: '#fffbeb' }} />
               
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button type="button" onClick={() => setEditUserModal(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
@@ -5207,12 +5216,12 @@ export default function AdminDashboard() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748b' }}>To'lov Oyi:</span>
-                  <strong>{selectedPaymentForReceipt.month_for || selectedPaymentForReceipt.month}</strong>
+                  <strong>{formatMonthUz(selectedPaymentForReceipt.month_for || selectedPaymentForReceipt.month)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748b' }}>To'lov Usuli:</span>
                   <span style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', fontSize: '11px' }}>
-                    {selectedPaymentForReceipt.payment_method || selectedPaymentForReceipt.method || 'CASH'}
+                    {formatPaymentMethodUz(selectedPaymentForReceipt.payment_method || selectedPaymentForReceipt.method || 'CASH')}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>

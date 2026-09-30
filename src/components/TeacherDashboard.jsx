@@ -63,6 +63,7 @@ export default function TeacherDashboard() {
   const [lessonTopic, setLessonTopic] = useState('');
   const [attendanceRecords, setAttendanceRecords] = useState({});
   const [attendanceNotes, setAttendanceNotes] = useState({});
+  const [attendanceSaving, setAttendanceSaving] = useState(false);
 
   const [paymentStudents, setPaymentStudents] = useState([]);
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -279,7 +280,8 @@ export default function TeacherDashboard() {
   };
 
   const handleSaveAttendance = async () => {
-    if (!attendanceModal) return;
+    if (!attendanceModal || attendanceSaving) return;
+    setAttendanceSaving(true);
     try {
       const lesson = await attendanceAPI.createLesson({
         group_id: attendanceModal.id,
@@ -303,6 +305,8 @@ export default function TeacherDashboard() {
     } catch (e) {
       const detail = e.response?.data?.detail || "Davomatni saqlashda xatolik yuz berdi";
       triggerNotification(detail, 'error');
+    } finally {
+      setAttendanceSaving(false);
     }
   };
 
@@ -396,7 +400,7 @@ export default function TeacherDashboard() {
 
   const handleTeacherSaveMarkAttendance = async (e) => {
     if (e) e.preventDefault();
-    if (!teacherMarkModalLesson || !selectedGroup) return;
+    if (!teacherMarkModalLesson || !selectedGroup || teacherMarkSaving) return;
     setTeacherMarkSaving(true);
     try {
       const attendances = (groupJournalData?.students || []).map(s => ({
@@ -417,8 +421,9 @@ export default function TeacherDashboard() {
     } catch (err) {
       const detail = err.response?.data?.detail || "Davomatni saqlashda xatolik";
       triggerNotification(detail, 'error');
+    } finally {
+      setTeacherMarkSaving(false);
     }
-    setTeacherMarkSaving(false);
   };
 
   // Homework creation handler
@@ -1614,7 +1619,8 @@ export default function TeacherDashboard() {
                         <button 
                           type="button" 
                           onClick={async () => {
-                            if (!selectedGroup) return;
+                            if (!selectedGroup || attendanceSaving || attendanceStudents.length === 0) return;
+                            setAttendanceSaving(true);
                             triggerHaptic('medium');
                             try {
                               const lesson = await attendanceAPI.createLesson({
@@ -1636,23 +1642,25 @@ export default function TeacherDashboard() {
                             } catch (err) {
                               const detail = err.response?.data?.detail || "Davomatni saqlashda xatolik";
                               triggerNotification(detail, 'error');
+                            } finally {
+                              setAttendanceSaving(false);
                             }
                           }}
-                          disabled={attendanceStudents.length === 0}
+                          disabled={attendanceStudents.length === 0 || attendanceSaving}
                           style={{
                             width: isMobile ? '100%' : 'auto',
                             padding: '12px 24px',
                             borderRadius: '12px',
                             border: 'none',
-                            backgroundColor: attendanceStudents.length === 0 ? '#94a3b8' : '#2563eb',
+                            backgroundColor: (attendanceStudents.length === 0 || attendanceSaving) ? '#94a3b8' : '#2563eb',
                             color: '#ffffff',
                             fontWeight: '900',
                             fontSize: isMobile ? '13px' : '14px',
-                            cursor: attendanceStudents.length === 0 ? 'not-allowed' : 'pointer',
+                            cursor: (attendanceStudents.length === 0 || attendanceSaving) ? 'not-allowed' : 'pointer',
                             boxShadow: '0 4px 14px rgba(37,99,235,0.2)'
                           }}
                         >
-                          Davomatni Saqlash & Xabar Yuborish
+                          {attendanceSaving ? "Saqlanmoqda..." : "Davomatni Saqlash & Xabar Yuborish"}
                         </button>
                       </div>
                     </div>
