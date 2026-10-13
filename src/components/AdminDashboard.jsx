@@ -65,6 +65,9 @@ export default function AdminDashboard() {
   const [showAssignStudentModal, setShowAssignStudentModal] = useState(false);
   const [assignSelectedGroupId, setAssignSelectedGroupId] = useState(null);
   const [assignSelectedStudentId, setAssignSelectedStudentId] = useState(null);
+  const [assignStudentSearch, setAssignStudentSearch] = useState('');
+  const [assignSelectedCandidateType, setAssignSelectedCandidateType] = useState('student'); // 'student' | 'lead'
+  const [assignSelectedLeadId, setAssignSelectedLeadId] = useState(null);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [assignTariffType, setAssignTariffType] = useState('STANDART');
   const [assignCustomPrice, setAssignCustomPrice] = useState('');
@@ -462,13 +465,64 @@ export default function AdminDashboard() {
     try {
       const res = await crmAPI.updateLeadStatus(leadId, newStatus, notes);
       triggerNotification(res.message || "Lead holati yangilandi!");
-      if (res.new_login_id) {
+      if (res.temp_password) {
         triggerNotification(`O'quvchi yaratildi! Login: ${res.new_login_id}, Parol: ${res.temp_password}`);
-        await fetchData();
       }
-      await fetchLeads();
+      await Promise.all([fetchData(), fetchLeads()]);
+      return res;
     } catch (e) {
       triggerNotification("Lead holatini yangilashda xatolik!");
+      return null;
+    }
+  };
+
+  const handleEnrollAndOpenAssignModal = async (lead) => {
+    try {
+      let studentId = null;
+      if (lead.status !== 'ENROLLED') {
+        const res = await crmAPI.updateLeadStatus(lead.id, 'ENROLLED');
+        triggerNotification(res?.message || "O'quvchi qabul qilindi!");
+        if (res?.temp_password) {
+          triggerNotification(`O'quvchi yaratildi! Login: ${res.new_login_id}, Parol: ${res.temp_password}`);
+        }
+        studentId = res?.student_id;
+        await Promise.all([fetchData(), fetchLeads()]);
+      }
+
+      // Agar studentId bo'lmasa, users ro'yxatidan qidiramiz
+      let currentUsers = users;
+      if (!studentId) {
+        const uRes = await usersAPI.getUsers();
+        if (Array.isArray(uRes)) {
+          setUsers(uRes);
+          currentUsers = uRes;
+        }
+        const matched = (currentUsers || []).find(u => u.phone && lead.phone && u.phone === lead.phone) ||
+                        (currentUsers || []).find(u => (u.full_name || '').toLowerCase() === (lead.full_name || '').toLowerCase());
+        if (matched) studentId = matched.id;
+      }
+
+      // Guruh tanlash: agar lead fani mavjud bo'lsa, mos guruhni tanlaymiz
+      let targetGroupId = null;
+      if (lead.course_id && (groups || []).length > 0) {
+        const matchingGroup = groups.find(g => g.course_id === lead.course_id);
+        if (matchingGroup) targetGroupId = matchingGroup.id;
+      }
+      if (!targetGroupId && (groups || []).length > 0) {
+        targetGroupId = groups[0].id;
+      }
+
+      setAssignSelectedCandidateType('student');
+      setAssignSelectedLeadId(null);
+      setAssignSelectedStudentId(studentId || '');
+      setAssignSelectedGroupId(targetGroupId);
+      setAssignStudentSearch(lead.full_name || '');
+      setAssignTariffType('STANDART');
+      setAssignCustomPrice('');
+      setAssignDiscountNote('');
+      setShowAssignStudentModal(true);
+    } catch (err) {
+      triggerNotification("O'quvchini qabul qilish va guruhga biriktirishda xatolik yuz berdi");
     }
   };
 
@@ -693,6 +747,15 @@ export default function AdminDashboard() {
                               display: 'flex', alignItems: 'center', gap: '4px'
                             }}>
                               <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>event</span> Sinov
+                            </button>
+                          )}
+                          {lead.status !== 'REJECTED' && (
+                            <button onClick={() => handleEnrollAndOpenAssignModal(lead)} title="Qabul qilish va Guruhga biriktirish" style={{
+                              padding: '6px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                              backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', fontSize: '11px',
+                              display: 'flex', alignItems: 'center', gap: '4px'
+                            }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>group_add</span> Guruhga qo'shish
                             </button>
                           )}
                           {lead.status !== 'ENROLLED' && lead.status !== 'REJECTED' && (
@@ -1025,6 +1088,9 @@ export default function AdminDashboard() {
               const firstGroup = (groups || [])[0];
               setAssignSelectedStudentId(firstStudent ? firstStudent.id : '');
               setAssignSelectedGroupId(firstGroup ? firstGroup.id : '');
+              setAssignStudentSearch('');
+              setAssignSelectedCandidateType('student');
+              setAssignSelectedLeadId(null);
               setAssignTariffType('STANDART');
               setAssignCustomPrice('');
               setShowAssignStudentModal(true);
@@ -3539,145 +3605,422 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {showAssignStudentModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '16px' }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>O'quvchini Guruhga Biriktirish</h3>
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>O'quvchi, guruh va kerakli to'lov tarifini tanlang.</p>
-            <form onSubmit={async e => {
-              e.preventDefault();
-              
-              const studentStudents = (users || []).filter(u => u && u.role === 'STUDENT');
-              const finalStudentId = parseInt(assignSelectedStudentId || studentStudents[0]?.id);
-              const finalGroupId = parseInt(assignSelectedGroupId || (groups || [])[0]?.id);
+      {showAssignStudentModal && (() => {
+        const sQuery = (assignStudentSearch || '').toLowerCase().trim();
+        const allStudents = (users || []).filter(u => u && u.role === 'STUDENT');
+        
+        // Qidiruv bo'yicha studentlar
+        const filteredStudents = allStudents.filter(s => {
+          if (!sQuery) return true;
+          return (s.full_name || '').toLowerCase().includes(sQuery) ||
+                 (s.login_id || '').toLowerCase().includes(sQuery) ||
+                 (s.phone || '').includes(sQuery);
+        });
 
-              if (!finalStudentId || !finalGroupId || isNaN(finalStudentId) || isNaN(finalGroupId)) {
-                triggerNotification("Iltimos, o'quvchi va guruhni to'g'ri tanlang!");
-                return;
-              }
+        // Konsultatsiyadagi talabgorlar (leads)
+        const availableLeads = (leads || []).filter(l => {
+          if (l.status === 'REJECTED') return false;
+          if (!sQuery) return true;
+          return (l.full_name || '').toLowerCase().includes(sQuery) ||
+                 (l.phone || '').includes(sQuery);
+        });
 
-              const customPriceVal = assignTariffType === 'GRANT_100' 
-                ? 0 
-                : (assignCustomPrice && String(assignCustomPrice).trim() !== '' ? parseFloat(assignCustomPrice) : null);
+        // Hozir tanlangan nomzod ma'lumotlari
+        let selectedCandidateInfo = null;
+        if (assignSelectedCandidateType === 'student' && assignSelectedStudentId) {
+          const s = allStudents.find(u => String(u.id) === String(assignSelectedStudentId));
+          if (s) {
+            selectedCandidateInfo = {
+              name: s.full_name,
+              type: 'student',
+              detail: `ID: ${s.login_id || s.id}${s.phone ? ` • Tel: ${s.phone}` : ''}`
+            };
+          }
+        } else if (assignSelectedCandidateType === 'lead' && assignSelectedLeadId) {
+          const l = (leads || []).find(x => String(x.id) === String(assignSelectedLeadId));
+          if (l) {
+            const courseTitle = l.course_id ? ((courses || []).find(c => c && c.id === l.course_id)?.title || '') : '';
+            selectedCandidateInfo = {
+              name: l.full_name,
+              type: 'lead',
+              detail: `Konsultatsiya arizasi${l.phone ? ` • Tel: ${l.phone}` : ''}${courseTitle ? ` • Fan: ${courseTitle}` : ''}`
+            };
+          }
+        }
 
-              setAssignSubmitting(true);
-              try {
-                const res = await groupsAPI.addStudentToGroup(finalGroupId, finalStudentId, {
-                  tariff_type: assignTariffType === 'STANDART' ? 'STANDARD' : assignTariffType,
-                  discount_type: assignTariffType === 'STANDART' ? 'STANDARD' : assignTariffType,
-                  custom_price: customPriceVal
-                });
-                triggerNotification(res?.message || "O'quvchi guruhga muvaffaqiyatli biriktirildi!");
-                
-                // Refresh groups list
-                try {
-                  const grps = await groupsAPI.getGroups();
-                  if (Array.isArray(grps)) setGroups(grps);
-                } catch(ge) {
-                  console.error("Groups reload error:", ge);
-                }
-
-                // Refresh group detail modal if open
-                if (selectedGroupDetail) {
-                  try {
-                    const updatedDetail = await groupsAPI.getGroupDetail(finalGroupId);
-                    if (updatedDetail) setSelectedGroupDetail(updatedDetail);
-                  } catch(de) {
-                    console.error("Group detail reload error:", de);
-                  }
-                }
-
-                setShowAssignStudentModal(false);
-                setAssignTariffType('STANDART');
-                setAssignCustomPrice('');
-                setAssignSelectedGroupId(null);
-                setAssignSelectedStudentId(null);
-              } catch(err) {
-                const detail = err.response?.data?.detail || err.message || "Biriktirishda xatolik yuz berdi";
-                triggerNotification(detail);
-              } finally {
-                setAssignSubmitting(false);
-              }
-            }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>O'quvchini tanlang *</label>
-              <select 
-                name="student_id" 
-                required 
-                value={assignSelectedStudentId || ((users || []).find(u => u && u.role === 'STUDENT')?.id || '')} 
-                onChange={e => setAssignSelectedStudentId(e.target.value)}
-                style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}
-              >
-                {(users || []).filter(u => u && u.role === 'STUDENT').length === 0 ? (
-                  <option value="" disabled>O'quvchilar mavjud emas (Avval o'quvchi qo'shing)</option>
-                ) : (
-                  (users || []).filter(u => u && u.role === 'STUDENT').map(s => (
-                    <option key={s.id} value={s.id}>{s.full_name || "O'quvchi"} (ID: {s.login_id || s.id})</option>
-                  ))
-                )}
-              </select>
-
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Guruhni tanlang *</label>
-              <select 
-                name="group_id" 
-                required 
-                value={assignSelectedGroupId || ((groups || [])[0]?.id || '')} 
-                onChange={e => setAssignSelectedGroupId(e.target.value)}
-                style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }}
-              >
-                {(groups || []).length === 0 ? (
-                  <option value="" disabled>Guruhlar mavjud emas (Avval guruh oching)</option>
-                ) : (
-                  (groups || []).filter(Boolean).map(g => {
-                    const courseTitle = (courses || []).find(c => c && c.id === g.course_id)?.title || 'Fan';
-                    return (
-                      <option key={g.id} value={g.id}>
-                        {g.name} ({g.days_of_week || 'Kunlar'} • {courseTitle})
-                      </option>
-                    );
-                  })
-                )}
-              </select>
-
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>To'lov Tarifi / Imtiyoz</label>
-              <select 
-                value={assignTariffType} 
-                onChange={(e) => setAssignTariffType(e.target.value)} 
-                style={{ width: '100%', padding: '12px', marginBottom: '14px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1e40af', fontWeight: '700', fontSize: '14px' }}
-              >
-                <option value="STANDART">Standart Tarif (Kurs to'liq oylik to'lovi)</option>
-                <option value="GRANT_100">100% Imtiyozli / Grant (0 UZS)</option>
-                <option value="DISCOUNT_50">50% Yarim Imtiyoz (Yarim to'lov)</option>
-                <option value="CHILD_TARIFF">Bolalar Tarifi (Kichik yoshdagilar narxi)</option>
-                <option value="ADULT_TARIFF">Kattalar Tarifi (Katta yoshdagilar narxi)</option>
-                <option value="CUSTOM_PRICE">Maxsus / Kelishilgan Narx (Ixtiyoriy summa)</option>
-              </select>
-
-              {assignTariffType !== 'STANDART' && assignTariffType !== 'STANDARD' && assignTariffType !== 'GRANT_100' && (
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>
-                    {assignTariffType === 'DISCOUNT_50' ? "Oylik to'lov summasi (Bo'sh qoldirilsa kurs narxining 50% olinadi)" : "Belgilangan oylik narx (UZS) *"}
-                  </label>
-                  <input 
-                    type="number" 
-                    placeholder="Masalan: 350000" 
-                    value={assignCustomPrice} 
-                    onChange={e => setAssignCustomPrice(e.target.value)}
-                    required={assignTariffType === 'CUSTOM_PRICE' || assignTariffType === 'CHILD_TARIFF' || assignTariffType === 'ADULT_TARIFF'}
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px' }} 
-                  />
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button type="button" onClick={() => { setShowAssignStudentModal(false); setAssignSelectedGroupId(null); setAssignSelectedStudentId(null); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Bekor qilish</button>
-                <button type="submit" disabled={assignSubmitting} style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', background: assignSubmitting ? '#93c5fd' : '#2563eb', color: '#fff', cursor: assignSubmitting ? 'not-allowed' : 'pointer', fontWeight: '800' }}>
-                  {assignSubmitting ? "Biriktirilmoqda..." : "Biriktirish"}
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '16px' }}>
+            <div style={{ backgroundColor: '#ffffff', padding: '28px', borderRadius: '24px', width: '520px', maxWidth: '100%', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', border: '1px solid #bfdbfe' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>O'quvchini Guruhga Biriktirish</h3>
+                <button 
+                  type="button" 
+                  onClick={() => { setShowAssignStudentModal(false); setAssignSelectedGroupId(null); setAssignSelectedStudentId(null); setAssignSelectedLeadId(null); setAssignStudentSearch(''); }}
+                  style={{ border: 'none', background: '#f1f5f9', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
                 </button>
               </div>
-            </form>
+              <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 16px 0' }}>Mavjud o'quvchi yoki konsultatsiyadagi arizachini qidirib guruhga qo'shing.</p>
+
+              <form onSubmit={async e => {
+                e.preventDefault();
+                
+                let finalStudentId = assignSelectedStudentId ? parseInt(assignSelectedStudentId) : null;
+                const finalGroupId = parseInt(assignSelectedGroupId || (groups || [])[0]?.id);
+
+                if (!finalGroupId || isNaN(finalGroupId)) {
+                  triggerNotification("Iltimos, guruhni tanlang!");
+                  return;
+                }
+
+                setAssignSubmitting(true);
+                try {
+                  // Agar konsultatsiya (lead) dan tanlangan bo'lsa, uni avval ENROLLED qilamiz
+                  if (assignSelectedCandidateType === 'lead' && assignSelectedLeadId) {
+                    const leadObj = (leads || []).find(l => l.id === assignSelectedLeadId);
+                    const res = await crmAPI.updateLeadStatus(assignSelectedLeadId, 'ENROLLED');
+                    if (res && res.student_id) {
+                      finalStudentId = res.student_id;
+                    } else {
+                      // users orasidan telefon yoki ism bo'yicha qidiramiz
+                      const uRes = await usersAPI.getUsers();
+                      if (Array.isArray(uRes)) {
+                        setUsers(uRes);
+                        const found = uRes.find(u => u.phone && leadObj?.phone && u.phone === leadObj.phone) ||
+                                      uRes.find(u => (u.full_name || '').toLowerCase() === (leadObj?.full_name || '').toLowerCase());
+                        if (found) finalStudentId = found.id;
+                      }
+                    }
+                    await Promise.all([fetchData(), fetchLeads()]);
+                  }
+
+                  if (!finalStudentId || isNaN(finalStudentId)) {
+                    triggerNotification("Iltimos, ro'yxatdan o'quvchini tanlang!");
+                    setAssignSubmitting(false);
+                    return;
+                  }
+
+                  const customPriceVal = assignTariffType === 'GRANT_100' 
+                    ? 0 
+                    : (assignCustomPrice && String(assignCustomPrice).trim() !== '' ? parseFloat(assignCustomPrice) : null);
+
+                  const res = await groupsAPI.addStudentToGroup(finalGroupId, finalStudentId, {
+                    tariff_type: assignTariffType === 'STANDART' ? 'STANDARD' : assignTariffType,
+                    discount_type: assignTariffType === 'STANDART' ? 'STANDARD' : assignTariffType,
+                    custom_price: customPriceVal
+                  });
+                  triggerNotification(res?.message || "O'quvchi guruhga muvaffaqiyatli biriktirildi!");
+                  
+                  // Refresh groups list
+                  try {
+                    const grps = await groupsAPI.getGroups();
+                    if (Array.isArray(grps)) setGroups(grps);
+                  } catch(ge) {
+                    console.error("Groups reload error:", ge);
+                  }
+
+                  // Refresh group detail modal if open
+                  if (selectedGroupDetail) {
+                    try {
+                      const updatedDetail = await groupsAPI.getGroupDetail(finalGroupId);
+                      if (updatedDetail) setSelectedGroupDetail(updatedDetail);
+                    } catch(de) {
+                      console.error("Group detail reload error:", de);
+                    }
+                  }
+
+                  setShowAssignStudentModal(false);
+                  setAssignTariffType('STANDART');
+                  setAssignCustomPrice('');
+                  setAssignStudentSearch('');
+                  setAssignSelectedCandidateType('student');
+                  setAssignSelectedLeadId(null);
+                  setAssignSelectedGroupId(null);
+                  setAssignSelectedStudentId(null);
+                } catch(err) {
+                  const detail = err.response?.data?.detail || err.message || "Biriktirishda xatolik yuz berdi";
+                  triggerNotification(detail);
+                } finally {
+                  setAssignSubmitting(false);
+                }
+              }}>
+
+                {/* 1. O'QUVCHINI QIDIRISH VA TANLASH */}
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b' }}>
+                      O'quvchini qidiring va tanlang *
+                    </label>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>
+                      {allStudents.length} o'quvchi • {availableLeads.length} ariza
+                    </span>
+                  </div>
+
+                  {/* Tanlangan nomzod ko'rsatgichi */}
+                  {selectedCandidateInfo && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      backgroundColor: selectedCandidateInfo.type === 'lead' ? '#ecfdf5' : '#eff6ff',
+                      border: `1.5px solid ${selectedCandidateInfo.type === 'lead' ? '#10b981' : '#3b82f6'}`,
+                      borderRadius: '12px',
+                      marginBottom: '10px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '20px', color: selectedCandidateInfo.type === 'lead' ? '#059669' : '#2563eb' }}>
+                          {selectedCandidateInfo.type === 'lead' ? 'contact_mail' : 'person'}
+                        </span>
+                        <div>
+                          <div style={{ fontWeight: '800', fontSize: '13px', color: selectedCandidateInfo.type === 'lead' ? '#065f46' : '#1e40af' }}>
+                            {selectedCandidateInfo.name}
+                            {selectedCandidateInfo.type === 'lead' && (
+                              <span style={{ marginLeft: '6px', fontSize: '10px', backgroundColor: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: '4px', fontWeight: '800' }}>
+                                Konsultatsiyadan
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>
+                            {selectedCandidateInfo.detail}
+                          </div>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: selectedCandidateInfo.type === 'lead' ? '#059669' : '#2563eb' }}>
+                        Tanlandi ✓
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Qidiruv inputi */}
+                  <div style={{ position: 'relative', marginBottom: '8px' }}>
+                    <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', color: '#94a3b8' }}>
+                      search
+                    </span>
+                    <input 
+                      type="text" 
+                      placeholder="Ism, login ID yoki telefon raqami bo'yicha qidiring..."
+                      value={assignStudentSearch}
+                      onChange={e => setAssignStudentSearch(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 36px 10px 38px',
+                        borderRadius: '12px',
+                        border: '1.5px solid #bfdbfe',
+                        backgroundColor: '#f8fafc',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    {assignStudentSearch && (
+                      <button 
+                        type="button" 
+                        onClick={() => setAssignStudentSearch('')}
+                        style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Ro'yxat (Scrollable) */}
+                  <div style={{
+                    maxHeight: '180px',
+                    overflowY: 'auto',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '12px',
+                    backgroundColor: '#ffffff',
+                    padding: '6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}>
+                    {/* 1. Mavjud o'quvchilar */}
+                    {filteredStudents.length > 0 && (
+                      <div style={{ padding: '4px 8px', fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>
+                        Mavjud O'quvchilar ({filteredStudents.length})
+                      </div>
+                    )}
+                    {filteredStudents.map(s => {
+                      const isSelected = assignSelectedCandidateType === 'student' && String(assignSelectedStudentId) === String(s.id);
+                      return (
+                        <div
+                          key={`st-${s.id}`}
+                          onClick={() => {
+                            setAssignSelectedCandidateType('student');
+                            setAssignSelectedStudentId(s.id);
+                            setAssignSelectedLeadId(null);
+                          }}
+                          style={{
+                            padding: '8px 10px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            backgroundColor: isSelected ? '#eff6ff' : '#f8fafc',
+                            border: isSelected ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: '800', color: isSelected ? '#1d4ed8' : '#0f172a', fontSize: '13px' }}>
+                              {s.full_name}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b' }}>
+                              ID: <b>{s.login_id}</b> {s.phone ? `• Tel: ${s.phone}` : ''}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#2563eb' }}>check_circle</span>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* 2. Konsultatsiyadagi talabgorlar (Leads) */}
+                    {availableLeads.length > 0 && (
+                      <div style={{ padding: '8px 8px 4px', fontSize: '11px', fontWeight: '800', color: '#059669', textTransform: 'uppercase', borderTop: filteredStudents.length > 0 ? '1px dashed #cbd5e1' : 'none', marginTop: filteredStudents.length > 0 ? '4px' : '0' }}>
+                        Konsultatsiyadagi Arizalar ({availableLeads.length})
+                      </div>
+                    )}
+                    {availableLeads.map(l => {
+                      const isSelected = assignSelectedCandidateType === 'lead' && String(assignSelectedLeadId) === String(l.id);
+                      const courseName = l.course_id ? ((courses || []).find(c => c && c.id === l.course_id)?.title || '') : '';
+                      return (
+                        <div
+                          key={`ld-${l.id}`}
+                          onClick={() => {
+                            setAssignSelectedCandidateType('lead');
+                            setAssignSelectedLeadId(l.id);
+                            setAssignSelectedStudentId(null);
+                            if (l.course_id && (groups || []).length > 0) {
+                              const mg = groups.find(g => g.course_id === l.course_id);
+                              if (mg) setAssignSelectedGroupId(mg.id);
+                            }
+                          }}
+                          style={{
+                            padding: '8px 10px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            backgroundColor: isSelected ? '#ecfdf5' : '#f8fafc',
+                            border: isSelected ? '1.5px solid #059669' : '1px dashed #93c5fd',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontWeight: '800', color: isSelected ? '#065f46' : '#0f172a', fontSize: '13px' }}>
+                                {l.full_name}
+                              </span>
+                              <span style={{ fontSize: '10px', backgroundColor: '#dcfce7', color: '#166534', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>
+                                Konsultatsiya
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b' }}>
+                              {l.phone ? `Tel: ${l.phone}` : ''} {courseName ? `• Fan: ${courseName}` : ''}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#059669' }}>check_circle</span>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {filteredStudents.length === 0 && availableLeads.length === 0 && (
+                      <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+                        Hech kim topilmadi. Ism yoki telefon raqamni boshqacha qidiring.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. GURUHNI TANLASH */}
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Guruhni tanlang *</label>
+                  <select 
+                    name="group_id" 
+                    required 
+                    value={assignSelectedGroupId || ((groups || [])[0]?.id || '')} 
+                    onChange={e => setAssignSelectedGroupId(e.target.value)}
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px', boxSizing: 'border-box' }}
+                  >
+                    {(groups || []).length === 0 ? (
+                      <option value="" disabled>Guruhlar mavjud emas (Avval guruh oching)</option>
+                    ) : (
+                      (groups || []).filter(Boolean).map(g => {
+                        const courseTitle = (courses || []).find(c => c && c.id === g.course_id)?.title || 'Fan';
+                        return (
+                          <option key={g.id} value={g.id}>
+                            {g.name} ({g.days_of_week || 'Kunlar'} • {courseTitle})
+                          </option>
+                        );
+                      })
+                    )}
+                  </select>
+                </div>
+
+                {/* 3. TO'LOV TARIFI / IMTIYOZ */}
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>To'lov Tarifi / Imtiyoz</label>
+                  <select 
+                    value={assignTariffType} 
+                    onChange={(e) => setAssignTariffType(e.target.value)} 
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1e40af', fontWeight: '700', fontSize: '14px', boxSizing: 'border-box' }}
+                  >
+                    <option value="STANDART">Standart Tarif (Kurs to'liq oylik to'lovi)</option>
+                    <option value="GRANT_100">100% Imtiyozli / Grant (0 UZS)</option>
+                    <option value="DISCOUNT_50">50% Yarim Imtiyoz (Yarim to'lov)</option>
+                    <option value="CHILD_TARIFF">Bolalar Tarifi (Kichik yoshdagilar narxi)</option>
+                    <option value="ADULT_TARIFF">Kattalar Tarifi (Katta yoshdagilar narxi)</option>
+                    <option value="CUSTOM_PRICE">Maxsus / Kelishilgan Narx (Ixtiyoriy summa)</option>
+                  </select>
+                </div>
+
+                {assignTariffType !== 'STANDART' && assignTariffType !== 'STANDARD' && assignTariffType !== 'GRANT_100' && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>
+                      {assignTariffType === 'DISCOUNT_50' ? "Oylik to'lov summasi (Bo'sh qoldirilsa kurs narxining 50% olinadi)" : "Belgilangan oylik narx (UZS) *"}
+                    </label>
+                    <input 
+                      type="number" 
+                      placeholder="Masalan: 350000" 
+                      value={assignCustomPrice} 
+                      onChange={e => setAssignCustomPrice(e.target.value)}
+                      required={assignTariffType === 'CUSTOM_PRICE' || assignTariffType === 'CHILD_TARIFF' || assignTariffType === 'ADULT_TARIFF'}
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px', boxSizing: 'border-box' }} 
+                    />
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => { setShowAssignStudentModal(false); setAssignSelectedGroupId(null); setAssignSelectedStudentId(null); setAssignSelectedLeadId(null); setAssignStudentSearch(''); }} 
+                    style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}
+                  >
+                    Bekor qilish
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={assignSubmitting} 
+                    style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', background: assignSubmitting ? '#93c5fd' : '#2563eb', color: '#fff', cursor: assignSubmitting ? 'not-allowed' : 'pointer', fontWeight: '800' }}
+                  >
+                    {assignSubmitting ? "Biriktirilmoqda..." : "Guruhga Biriktirish"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {showPaymentModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
@@ -4597,6 +4940,9 @@ export default function AdminDashboard() {
                   const firstStudent = (users || []).find(u => u && u.role === 'STUDENT');
                   setAssignSelectedGroupId(selectedGroupDetail.id); 
                   setAssignSelectedStudentId(firstStudent ? firstStudent.id : '');
+                  setAssignStudentSearch('');
+                  setAssignSelectedCandidateType('student');
+                  setAssignSelectedLeadId(null);
                   setAssignTariffType('STANDART');
                   setAssignCustomPrice('');
                   setShowAssignStudentModal(true); 
