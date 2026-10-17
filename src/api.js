@@ -97,6 +97,14 @@ export const usersAPI = {
     const res = await api.delete(`/users/${userId}`, { params: { permanent } });
     return res.data;
   },
+  getStudentFullDetail: async (studentId) => {
+    const res = await api.get(`/users/${studentId}/full-detail`);
+    return res.data;
+  },
+  getStudentFullDetailPdf: async (studentId) => {
+    const res = await api.get(`/users/${studentId}/full-detail/pdf`, { responseType: 'blob' });
+    return res.data;
+  },
 };
 
 // 3. Courses & Rooms Service
@@ -268,13 +276,25 @@ export const financeAPI = {
     const res = await api.delete(`/finance/payments/${paymentId}`);
     return res.data;
   },
-  getPayments: async () => {
-    const res = await api.get('/finance/payments');
+  getPayments: async (params = {}) => {
+    const res = await api.get('/finance/payments', { params });
+    return res.data;
+  },
+  downloadPaymentReceiptPdf: async (paymentId) => {
+    const res = await api.get(`/finance/payments/${paymentId}/pdf`, { responseType: 'blob' });
     return res.data;
   },
   recordExpense: async (expenseData) => {
     // { title, amount, category, date, description? }
     const res = await api.post('/finance/expenses', expenseData);
+    return res.data;
+  },
+  updateExpense: async (expenseId, expenseData) => {
+    const res = await api.put(`/finance/expenses/${expenseId}`, expenseData);
+    return res.data;
+  },
+  deleteExpense: async (expenseId) => {
+    const res = await api.delete(`/finance/expenses/${expenseId}`);
     return res.data;
   },
   getExpenses: async () => {

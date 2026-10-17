@@ -103,6 +103,25 @@ export default function AdminDashboard() {
   const [editPaymentSubmitting, setEditPaymentSubmitting] = useState(false);
   const [selectedPaymentForReceipt, setSelectedPaymentForReceipt] = useState(null);
 
+  // Student Full Detail Modal States
+  const [selectedStudentDetail, setSelectedStudentDetail] = useState(null);
+  const [studentDetailLoading, setStudentDetailLoading] = useState(false);
+  const [studentDetailPdfLoading, setStudentDetailPdfLoading] = useState(false);
+
+  // Payments List Search and Filters
+  const [paymentTableSearch, setPaymentTableSearch] = useState('');
+  const [paymentTableMonthFilter, setPaymentTableMonthFilter] = useState('ALL');
+  const [paymentTableMethodFilter, setPaymentTableMethodFilter] = useState('ALL');
+
+  // Expenses Section States
+  const [expensesList, setExpensesList] = useState([]);
+  const [expensesLoading, setExpensesLoading] = useState(false);
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [editExpenseModal, setEditExpenseModal] = useState(null);
+  const [expenseSubmitting, setExpenseSubmitting] = useState(false);
+  const [expenseCategoryFilter, setExpenseCategoryFilter] = useState('ALL');
+  const [expenseSearch, setExpenseSearch] = useState('');
+
   const normalizePhone = (phoneStr) => {
     if (!phoneStr) return null;
     let cleaned = phoneStr.trim().replace(/[^\d+]/g, '');
@@ -140,6 +159,38 @@ export default function AdminDashboard() {
       console.error(err);
     }
     setPaymentBillingLoading(false);
+  };
+
+  const handleOpenStudentDetail = async (user) => {
+    setSelectedStudentDetail({ student: user, loading: true });
+    setStudentDetailLoading(true);
+    try {
+      const detail = await usersAPI.getStudentFullDetail(user.id);
+      setSelectedStudentDetail(detail);
+    } catch (err) {
+      triggerNotification("O'quvchi to'liq ma'lumotlarini yuklashda xatolik!");
+      setSelectedStudentDetail(null);
+    } finally {
+      setStudentDetailLoading(false);
+    }
+  };
+
+  const handleDownloadStudentPdf = async (studentId) => {
+    setStudentDetailPdfLoading(true);
+    try {
+      const blob = await usersAPI.getStudentFullDetailPdf(studentId);
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `student_${studentId}_portfolio.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      triggerNotification("PDF ma'lumotnoma muvaffaqiyatli yuklab olindi!");
+    } catch (err) {
+      triggerNotification("PDF yuklab olishda xatolik!");
+    } finally {
+      setStudentDetailPdfLoading(false);
+    }
   };
 
   const handleDeletePayment = async (paymentId) => {
@@ -439,13 +490,26 @@ export default function AdminDashboard() {
     }
 
     try {
-      const gSum = await attendanceAPI.getGroupsSummary();
-      if(Array.isArray(gSum)) setGroupsAttendanceSummary(gSum);
+      const exps = await financeAPI.getExpenses();
+      if (Array.isArray(exps)) setExpensesList(exps);
     } catch(e) {
-      setGroupsAttendanceSummary([]);
+      setExpensesList([]);
     }
 
     setSchedules([]);
+  };
+
+  const fetchExpenses = async () => {
+    setExpensesLoading(true);
+    try {
+      const data = await financeAPI.getExpenses();
+      if (Array.isArray(data)) setExpensesList(data);
+    } catch (e) {
+      console.error(e);
+      setExpensesList([]);
+    } finally {
+      setExpensesLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -458,6 +522,9 @@ export default function AdminDashboard() {
     }
     if (activeTab === 'leads' && leads.length === 0) {
       fetchLeads();
+    }
+    if (activeTab === 'expenses') {
+      fetchExpenses();
     }
   }, [activeTab]);
 
@@ -545,6 +612,7 @@ export default function AdminDashboard() {
     { id: 'courses', label: 'Fanlar', icon: 'auto_stories' },
     { id: 'groups', label: 'Guruhlar', icon: 'groups' },
     { id: 'payments', label: 'To\'lovlar', icon: 'payments' },
+    { id: 'expenses', label: 'Xarajatlar', icon: 'account_balance_wallet' },
     { id: 'schedule', label: 'Dars Jadvallari', icon: 'calendar_month' },
     { id: 'exams', label: 'Imtihon Natijalari', icon: 'quiz' },
     { id: 'attendance', label: 'Davomat', icon: 'fact_check' }
@@ -981,7 +1049,16 @@ export default function AdminDashboard() {
                     </span>
                   )}
                 </td>
-                <td style={{ padding: '16px', display: 'flex', gap: '8px' }}>
+                <td style={{ padding: '16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {u.role === 'STUDENT' && (
+                    <button 
+                      onClick={() => handleOpenStudentDetail(u)} 
+                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #93c5fd', backgroundColor: '#dbeafe', color: '#1e40af', cursor: 'pointer', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      title="O'quvchi haqida to'liq ma'lumot va PDF"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>visibility</span> Batafsil
+                    </button>
+                  )}
                   <button onClick={() => setEditUserModal(u)} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#f8fafc', cursor: 'pointer', fontWeight: '700' }}>Tahrirlash</button>
                   <button onClick={() => { setSelectedStudentForFreeze(u); setShowFreezeModal(true); }} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', fontWeight: '700' }}>Muzlatish</button>
                   <button onClick={async () => {
@@ -1305,7 +1382,7 @@ export default function AdminDashboard() {
 
       {/* 2. PAYMENTS HISTORY */}
       <div style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h3 style={{ fontSize: '18px', fontWeight: '900', margin: 0, color: '#0f172a' }}>To'lovlar Tarixi</h3>
             <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>Barcha qabul qilingan to'lovlar, kvitansiyalar, tahrirlash va bekor qilish</p>
@@ -1313,6 +1390,60 @@ export default function AdminDashboard() {
           <span style={{ fontSize: '13px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', padding: '6px 14px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
             Jami: {payments.length} ta to'lov
           </span>
+        </div>
+
+        {/* SEARCH AND FILTERS BAR */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
+          <div style={{ flex: '1 1 240px', position: 'relative' }}>
+            <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '20px' }}>search</span>
+            <input 
+              type="text" 
+              placeholder="Talaba ismi, login ID yoki chek № bo'yicha qidirish..." 
+              value={paymentTableSearch} 
+              onChange={e => setPaymentTableSearch(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px 10px 40px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', backgroundColor: '#ffffff', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>Oy:</label>
+            <select 
+              value={paymentTableMonthFilter} 
+              onChange={e => setPaymentTableMonthFilter(e.target.value)}
+              style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', backgroundColor: '#ffffff', fontWeight: '700' }}
+            >
+              <option value="ALL">Barcha Oylar</option>
+              {Array.from(new Set(payments.map(p => p.month_for || p.month).filter(Boolean))).sort().reverse().map(m => (
+                <option key={m} value={m}>{formatMonthUz(m)}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>Usul:</label>
+            <select 
+              value={paymentTableMethodFilter} 
+              onChange={e => setPaymentTableMethodFilter(e.target.value)}
+              style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', backgroundColor: '#ffffff', fontWeight: '700' }}
+            >
+              <option value="ALL">Barcha To'lov Turlari</option>
+              <option value="CASH">Naqd pul (CASH)</option>
+              <option value="CARD">Plastik karta (CARD)</option>
+              <option value="CLICK">Click</option>
+              <option value="PAYME">Payme</option>
+              <option value="UZUM">Uzum Bank</option>
+              <option value="BANK_TRANSFER">Bank o'tkazmasi</option>
+            </select>
+          </div>
+
+          {(paymentTableSearch || paymentTableMonthFilter !== 'ALL' || paymentTableMethodFilter !== 'ALL') && (
+            <button 
+              onClick={() => { setPaymentTableSearch(''); setPaymentTableMonthFilter('ALL'); setPaymentTableMethodFilter('ALL'); }}
+              style={{ padding: '9px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', color: '#64748b', fontWeight: '800', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span> Tozalash
+            </button>
+          )}
         </div>
 
         <div style={{ overflowX: 'auto' }}>
@@ -1330,13 +1461,27 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {payments.map(p => {
+              {payments
+                .filter(p => {
+                  const st = users.find(u => u.id === p.student_id);
+                  const stName = (st?.full_name || p.student_name || '').toLowerCase();
+                  const stLogin = (st?.login_id || p.student_login_id || '').toLowerCase();
+                  const pNote = (p.note || '').toLowerCase();
+                  const sTerm = (paymentTableSearch || '').toLowerCase().trim();
+
+                  const matchesSearch = !sTerm || stName.includes(sTerm) || stLogin.includes(sTerm) || pNote.includes(sTerm) || String(p.id).includes(sTerm);
+                  const matchesMonth = paymentTableMonthFilter === 'ALL' || (p.month_for || p.month) === paymentTableMonthFilter;
+                  const matchesMethod = paymentTableMethodFilter === 'ALL' || (p.payment_method || p.method) === paymentTableMethodFilter;
+
+                  return matchesSearch && matchesMonth && matchesMethod;
+                })
+                .map(p => {
                 const st = users.find(u => u.id === p.student_id);
                 return (
                   <tr key={p.id} style={{ borderBottom: '1px solid #eff6ff' }}>
                     <td style={{ padding: '14px 16px', fontWeight: '800' }}>#{p.id}</td>
                     <td style={{ padding: '14px 16px', fontWeight: '700' }}>
-                      {st ? `${st.full_name} (${st.login_id})` : `O'quvchi ID: ${p.student_id}`}
+                      {st ? `${st.full_name} (${st.login_id})` : p.student_name ? `${p.student_name} (${p.student_login_id})` : `O'quvchi ID: ${p.student_id}`}
                     </td>
                     <td style={{ padding: '14px 16px', fontWeight: '900', color: '#2563eb' }}>{(p.amount || 0).toLocaleString()} UZS</td>
                     <td style={{ padding: '14px 16px' }}>
@@ -1396,6 +1541,205 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
+
+  const renderExpenses = () => {
+    const categories = [
+      "Barchasi",
+      "O'qituvchi Maoshi",
+      "Bino Ijarasi",
+      "Kommunal to'lovlar",
+      "Kanselyariya & Jihozlar",
+      "Marketing & Reklama",
+      "Internet & Serverlar",
+      "Boshqa Xarajatlar"
+    ];
+
+    const filteredExpenses = (expensesList || []).filter(item => {
+      const catMatch = expenseCategoryFilter === 'ALL' || item.category === expenseCategoryFilter;
+      const s = (expenseSearch || '').toLowerCase().trim();
+      const textMatch = !s ||
+        (item.title || '').toLowerCase().includes(s) ||
+        (item.description || '').toLowerCase().includes(s) ||
+        (item.category || '').toLowerCase().includes(s);
+      return catMatch && textMatch;
+    });
+
+    const totalExpenseAmount = (expensesList || []).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const thisMonthStr = new Date().toISOString().slice(0, 7);
+    const thisMonthExpenseAmount = (expensesList || [])
+      .filter(item => (item.date && String(item.date).startsWith(thisMonthStr)))
+      .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#0f172a', margin: 0 }}>Xarajatlar Bo'limi</h2>
+            <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '14px' }}>O'quv markazining barcha xarajatlari, maoshlar, ijara va operatsion to'lovlar hisobi</p>
+          </div>
+          <button 
+            onClick={() => setShowAddExpenseModal(true)} 
+            style={{ backgroundColor: '#dc2626', color: '#ffffff', border: 'none', padding: '12px 20px', borderRadius: '14px', cursor: 'pointer', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.25)' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add_circle</span> + Yangi Xarajat Qayd Etish
+          </button>
+        </div>
+
+        {/* Stats Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #fecaca', borderRadius: '20px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b' }}>Jami Xarajatlar</span>
+              <h3 style={{ margin: '6px 0 0', fontSize: '22px', fontWeight: '900', color: '#0f172a' }}>
+                {totalExpenseAmount.toLocaleString()} UZS
+              </h3>
+            </div>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>trending_down</span>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #fed7aa', borderRadius: '20px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#c2410c' }}>Joriy Oy Xarajatlari</span>
+              <h3 style={{ margin: '6px 0 0', fontSize: '22px', fontWeight: '900', color: '#0f172a' }}>
+                {thisMonthExpenseAmount.toLocaleString()} UZS
+              </h3>
+            </div>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: '#fff7ed', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>calendar_today</span>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '20px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#1d4ed8' }}>Qaydlar Soni</span>
+              <h3 style={{ margin: '6px 0 0', fontSize: '22px', fontWeight: '900', color: '#0f172a' }}>
+                {expensesList.length} ta operatsiya
+              </h3>
+            </div>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>receipt</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Expenses List & Filter Table */}
+        <div style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+          {/* Filters Bar */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px', alignItems: 'center' }}>
+            <div style={{ flex: '1 1 240px', position: 'relative' }}>
+              <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '20px' }}>search</span>
+              <input 
+                type="text" 
+                placeholder="Xarajat nomi yoki tavsifi bo'yicha qidirish..." 
+                value={expenseSearch} 
+                onChange={e => setExpenseSearch(e.target.value)}
+                style={{ width: '100%', padding: '10px 14px 10px 40px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>Toifa:</label>
+              <select 
+                value={expenseCategoryFilter} 
+                onChange={e => setExpenseCategoryFilter(e.target.value)}
+                style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', backgroundColor: '#ffffff', fontWeight: '700' }}
+              >
+                <option value="ALL">Barcha Toifalar</option>
+                {categories.slice(1).map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {(expenseSearch || expenseCategoryFilter !== 'ALL') && (
+              <button 
+                onClick={() => { setExpenseSearch(''); setExpenseCategoryFilter('ALL'); }}
+                style={{ padding: '9px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', color: '#64748b', fontWeight: '800', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span> Tozalash
+              </button>
+            )}
+          </div>
+
+          {/* Table */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+              <thead style={{ backgroundColor: '#f8fafc', color: '#475569', fontWeight: '800' }}>
+                <tr>
+                  <th style={{ padding: '14px 16px' }}>#ID</th>
+                  <th style={{ padding: '14px 16px' }}>Xarajat Nomi</th>
+                  <th style={{ padding: '14px 16px' }}>Toifasi</th>
+                  <th style={{ padding: '14px 16px' }}>Sana</th>
+                  <th style={{ padding: '14px 16px' }}>Summa</th>
+                  <th style={{ padding: '14px 16px' }}>Izoh</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'center' }}>Amallar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredExpenses.map(item => (
+                  <tr key={item.id} style={{ borderBottom: '1px solid #eff6ff' }}>
+                    <td style={{ padding: '14px 16px', fontWeight: '800', color: '#64748b' }}>#{item.id}</td>
+                    <td style={{ padding: '14px 16px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '8px', backgroundColor: '#fef2f2', color: '#dc2626', fontWeight: '800', border: '1px solid #fee2e2' }}>
+                        {item.category}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 16px', color: '#475569', fontSize: '13px' }}>
+                      {item.date ? String(item.date).slice(0, 10) : '-'}
+                    </td>
+                    <td style={{ padding: '14px 16px', fontWeight: '900', color: '#dc2626', fontSize: '15px' }}>
+                      -{(Number(item.amount) || 0).toLocaleString()} UZS
+                    </td>
+                    <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px', maxWidth: '240px' }}>
+                      {item.description || '-'}
+                    </td>
+                    <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                        <button 
+                          onClick={() => setEditExpenseModal(item)}
+                          title="Tahrirlash"
+                          style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', cursor: 'pointer', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span> Tahrirlash
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (!window.confirm(`"${item.title}" xarajatini o'chirishni tasdiqlaysizmi?`)) return;
+                            try {
+                              await financeAPI.deleteExpense(item.id);
+                              setExpensesList(prev => prev.filter(x => x.id !== item.id));
+                              triggerNotification("Xarajat muvaffaqiyatli o'chirildi!");
+                            } catch(e) {
+                              triggerNotification("Xarajatni o'chirishda xatolik yuz berdi!");
+                            }
+                          }}
+                          title="O'chirish"
+                          style={{ padding: '6px 10px', borderRadius: '8px', border: 'none', backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: '800', cursor: 'pointer', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span> O'chirish
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredExpenses.length === 0 && (
+                  <tr>
+                    <td colSpan="7" style={{ padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                      {expensesLoading ? "Xarajatlar yuklanmoqda..." : "Ushbu parametrlar bo'yicha xarajatlar topilmadi."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderSchedule = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -3062,6 +3406,7 @@ export default function AdminDashboard() {
           {activeTab === 'courses' && renderCourses()}
           {activeTab === 'groups' && renderGroups()}
           {activeTab === 'payments' && renderPayments()}
+          {activeTab === 'expenses' && renderExpenses()}
           {activeTab === 'schedule' && renderSchedule()}
           {activeTab === 'exams' && renderExams()}
           {activeTab === 'attendance' && renderAttendance()}
@@ -5634,6 +5979,347 @@ export default function AdminDashboard() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* STUDENT FULL DETAIL MODAL (O'QUVCHI TO'LIQ MA'LUMOTI) */}
+      {/* ---------------------------------------------------- */}
+      {selectedStudentDetail && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(6px)', zIndex: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div className="animate-fade-in" style={{ backgroundColor: '#ffffff', borderRadius: '28px', maxWidth: '720px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px', boxShadow: '0 25px 60px rgba(0,0,0,0.3)' }}>
+            
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px' }}>
+              <div>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#2563eb', backgroundColor: '#eff6ff', padding: '4px 10px', borderRadius: '8px', display: 'inline-block', marginBottom: '8px' }}>
+                  O'quvchi Portfoliyasi & Ma'lumotnomasi
+                </span>
+                <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '900', color: '#0f172a' }}>
+                  {selectedStudentDetail.student?.full_name || "O'quvchi ma'lumoti"}
+                </h3>
+                <span style={{ fontSize: '13px', color: '#64748b' }}>
+                  Login ID: <strong style={{ color: '#2563eb' }}>#{selectedStudentDetail.student?.login_id}</strong> • Holati: <span style={{ color: '#166534', fontWeight: '800' }}>{selectedStudentDetail.student?.student_status || 'ACTIVE'}</span>
+                </span>
+              </div>
+              <button 
+                onClick={() => setSelectedStudentDetail(null)}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>close</span>
+              </button>
+            </div>
+
+            {studentDetailLoading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '32px', color: '#2563eb', marginBottom: '8px' }}>hourglass_empty</span>
+                <p style={{ margin: 0, fontWeight: '700' }}>Ma'lumotlar yuklanmoqda...</p>
+              </div>
+            ) : (
+              <>
+                {/* 1. Basic Student Info Card */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '18px', border: '1px solid #e2e8f0', fontSize: '13px' }}>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: '700' }}>Telefon raqami</span>
+                    <strong style={{ color: '#0f172a' }}>{selectedStudentDetail.student?.phone || "Mavjud emas"}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: '700' }}>Ota-onasi telefoni</span>
+                    <strong style={{ color: '#0f172a' }}>
+                      {selectedStudentDetail.student?.parent_phone || selectedStudentDetail.student?.father_phone || selectedStudentDetail.student?.mother_phone || "Mavjud emas"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: '700' }}>Markazga kelgan sana</span>
+                    <strong style={{ color: '#0f172a' }}>{selectedStudentDetail.student?.created_at?.slice(0, 10) || "Qayd etilmagan"}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748b', display: 'block', fontSize: '11px', fontWeight: '700' }}>Telegram Bot</span>
+                    <span style={{ color: selectedStudentDetail.student?.telegram_chat_id ? '#166534' : '#64748b', fontWeight: '800' }}>
+                      {selectedStudentDetail.student?.telegram_chat_id ? "Ulangan ✅" : "Ulanmagan"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 2. Enrolled Groups Section */}
+                <div>
+                  <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: '900', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#2563eb' }}>groups</span>
+                    Qaysi guruhlarda o'qiydi ({selectedStudentDetail.groups?.length || 0} ta guruh)
+                  </h4>
+                  {(!selectedStudentDetail.groups || selectedStudentDetail.groups.length === 0) ? (
+                    <p style={{ margin: 0, padding: '16px', backgroundColor: '#f8fafc', borderRadius: '12px', color: '#64748b', fontSize: '13px', textAlign: 'center' }}>
+                      Hozirda biriktirilgan guruhlar mavjud emas.
+                    </p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {selectedStudentDetail.groups.map(g => (
+                        <div key={g.group_id} style={{ padding: '14px 18px', borderRadius: '16px', backgroundColor: '#ffffff', border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                              <strong style={{ fontSize: '15px', color: '#0f172a' }}>{g.group_name}</strong>
+                              <span style={{ fontSize: '11px', backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '2px 8px', borderRadius: '6px', fontWeight: '800' }}>
+                                {g.course_title}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                              <span><strong>Kunlari:</strong> {g.days_of_week || '-'}</span>
+                              <span><strong>Vaqti:</strong> {g.start_time} - {g.end_time}</span>
+                              <span><strong>Xona:</strong> {g.room_name}</span>
+                              <span><strong>O'qituvchi:</strong> {g.teacher_name}</span>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Guruhga kelgan:</span>
+                            <span style={{ fontSize: '12px', fontWeight: '800', color: '#2563eb' }}>{g.joined_at || selectedStudentDetail.student?.created_at?.slice(0, 10) || '-'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Attendance Summary */}
+                {selectedStudentDetail.attendance_summary && (
+                  <div>
+                    <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: '900', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#16a34a' }}>fact_check</span>
+                      Davomat Statistikasi ({selectedStudentDetail.attendance_summary.rate}% qatnashgan)
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', textAlign: 'center' }}>
+                      <div style={{ padding: '10px', backgroundColor: '#eff6ff', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+                        <span style={{ fontSize: '11px', color: '#1d4ed8', fontWeight: '700' }}>Jami darslar</span>
+                        <h4 style={{ margin: '4px 0 0', color: '#1e40af', fontSize: '18px', fontWeight: '900' }}>{selectedStudentDetail.attendance_summary.total}</h4>
+                      </div>
+                      <div style={{ padding: '10px', backgroundColor: '#dcfce7', borderRadius: '12px', border: '1px solid #86efac' }}>
+                        <span style={{ fontSize: '11px', color: '#166534', fontWeight: '700' }}>Keldi</span>
+                        <h4 style={{ margin: '4px 0 0', color: '#15803d', fontSize: '18px', fontWeight: '900' }}>{selectedStudentDetail.attendance_summary.present}</h4>
+                      </div>
+                      <div style={{ padding: '10px', backgroundColor: '#fef3c7', borderRadius: '12px', border: '1px solid #fde68a' }}>
+                        <span style={{ fontSize: '11px', color: '#b45309', fontWeight: '700' }}>Kechikdi</span>
+                        <h4 style={{ margin: '4px 0 0', color: '#b45309', fontSize: '18px', fontWeight: '900' }}>{selectedStudentDetail.attendance_summary.late}</h4>
+                      </div>
+                      <div style={{ padding: '10px', backgroundColor: '#fee2e2', borderRadius: '12px', border: '1px solid #fecdd3' }}>
+                        <span style={{ fontSize: '11px', color: '#991b1b', fontWeight: '700' }}>Kelmadi</span>
+                        <h4 style={{ margin: '4px 0 0', color: '#dc2626', fontSize: '18px', fontWeight: '900' }}>{selectedStudentDetail.attendance_summary.absent}</h4>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Payment History */}
+                <div>
+                  <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: '900', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#2563eb' }}>payments</span>
+                    Oxirgi to'lovlari
+                  </h4>
+                  {(!selectedStudentDetail.payments || selectedStudentDetail.payments.length === 0) ? (
+                    <p style={{ margin: 0, padding: '12px', backgroundColor: '#f8fafc', borderRadius: '10px', color: '#64748b', fontSize: '12px', textAlign: 'center' }}>
+                      To'lov yozuvlari mavjud emas.
+                    </p>
+                  ) : (
+                    <div style={{ maxHeight: '140px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                        <thead style={{ backgroundColor: '#f8fafc', color: '#64748b' }}>
+                          <tr>
+                            <th style={{ padding: '8px 12px' }}>Chek №</th>
+                            <th style={{ padding: '8px 12px' }}>Oy</th>
+                            <th style={{ padding: '8px 12px' }}>Summa</th>
+                            <th style={{ padding: '8px 12px' }}>Usul</th>
+                            <th style={{ padding: '8px 12px' }}>Sana</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedStudentDetail.payments.map(p => (
+                            <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '8px 12px', fontWeight: '800' }}>#{p.id}</td>
+                              <td style={{ padding: '8px 12px' }}>{formatMonthUz(p.month_for)}</td>
+                              <td style={{ padding: '8px 12px', fontWeight: '800', color: '#2563eb' }}>{(p.amount || 0).toLocaleString()} UZS</td>
+                              <td style={{ padding: '8px 12px' }}>{formatPaymentMethodUz(p.payment_method)}</td>
+                              <td style={{ padding: '8px 12px', color: '#64748b' }}>{p.created_at?.slice(0, 10)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Actions */}
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setSelectedStudentDetail(null)}
+                    style={{ padding: '12px 20px', borderRadius: '12px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', color: '#475569', fontWeight: '800', fontSize: '13px', cursor: 'pointer' }}
+                  >
+                    Yopish
+                  </button>
+                  <button 
+                    type="button" 
+                    disabled={studentDetailPdfLoading}
+                    onClick={() => handleDownloadStudentPdf(selectedStudentDetail.student?.id)}
+                    style={{ padding: '12px 24px', borderRadius: '12px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.3)' }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>download</span>
+                    {studentDetailPdfLoading ? "Yuklanmoqda..." : "To'liq Ma'lumotni PDF Yuklab Olish"}
+                  </button>
+                </div>
+              </>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* ADD EXPENSE MODAL (YANGI XARAJAT QAYD ETISH) */}
+      {/* ---------------------------------------------------- */}
+      {showAddExpenseModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="material-symbols-outlined" style={{ color: '#dc2626' }}>account_balance_wallet</span>
+              Yangi Xarajat Qayd Etish
+            </h3>
+            <form onSubmit={async e => {
+              e.preventDefault();
+              const title = e.target.title.value.trim();
+              const amount = parseFloat(e.target.amount.value);
+              const category = e.target.category.value;
+              const date = e.target.date.value || new Date().toISOString().slice(0, 10);
+              const description = e.target.description.value.trim();
+
+              if (!title || !amount || amount <= 0) {
+                triggerNotification("Iltimos, xarajat nomi va summasini to'g'ri kiriting!");
+                return;
+              }
+
+              setExpenseSubmitting(true);
+              try {
+                const newExp = await financeAPI.recordExpense({ title, amount, category, date, description });
+                setExpensesList(prev => [newExp, ...prev]);
+                triggerNotification("Xarajat muvaffaqiyatli qayd etildi!");
+                setShowAddExpenseModal(false);
+              } catch (err) {
+                triggerNotification("Xarajatni saqlashda xatolik yuz berdi!");
+              } finally {
+                setExpenseSubmitting(false);
+              }
+            }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Xarajat Nomi *</label>
+                <input name="title" required placeholder="Masalan: 3-oy bino ijarasi" style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Summa (UZS) *</label>
+                <input name="amount" type="number" required placeholder="Masalan: 1500000" style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Xarajat Toifasi *</label>
+                <select name="category" defaultValue="Boshqa Xarajatlar" style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }}>
+                  <option value="O'qituvchi Maoshi">O'qituvchi Maoshi</option>
+                  <option value="Bino Ijarasi">Bino Ijarasi</option>
+                  <option value="Kommunal to'lovlar">Kommunal to'lovlar (Svet, Gaz, Suv)</option>
+                  <option value="Kanselyariya & Jihozlar">Kanselyariya & Jihozlar</option>
+                  <option value="Marketing & Reklama">Marketing & Reklama</option>
+                  <option value="Internet & Serverlar">Internet & Serverlar</option>
+                  <option value="Boshqa Xarajatlar">Boshqa Xarajatlar</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Sana *</label>
+                <input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Qo'shimcha Izoh</label>
+                <textarea name="description" rows={3} placeholder="Xarajat bo'yicha batafsil izoh yoki chek raqami..." style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setShowAddExpenseModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontWeight: '800', cursor: 'pointer' }}>Bekor qilish</button>
+                <button type="submit" disabled={expenseSubmitting} style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', backgroundColor: '#dc2626', color: '#ffffff', fontWeight: '800', cursor: 'pointer' }}>
+                  {expenseSubmitting ? "Saqlanmoqda..." : "Xarajatni Saqlash"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* EDIT EXPENSE MODAL (XARAJATNI TAHRIRLASH) */}
+      {/* ---------------------------------------------------- */}
+      {editExpenseModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '24px', width: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>
+              Xarajatni Tahrirlash #{editExpenseModal.id}
+            </h3>
+            <form onSubmit={async e => {
+              e.preventDefault();
+              const title = e.target.title.value.trim();
+              const amount = parseFloat(e.target.amount.value);
+              const category = e.target.category.value;
+              const date = e.target.date.value;
+              const description = e.target.description.value.trim();
+
+              setExpenseSubmitting(true);
+              try {
+                const updated = await financeAPI.updateExpense(editExpenseModal.id, { title, amount, category, date, description });
+                setExpensesList(prev => prev.map(x => x.id === editExpenseModal.id ? updated : x));
+                triggerNotification("Xarajat muvaffaqiyatli yangilandi!");
+                setEditExpenseModal(null);
+              } catch (err) {
+                triggerNotification("Xarajatni tahrirlashda xatolik yuz berdi!");
+              } finally {
+                setExpenseSubmitting(false);
+              }
+            }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Xarajat Nomi *</label>
+                <input name="title" defaultValue={editExpenseModal.title} required style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Summa (UZS) *</label>
+                <input name="amount" type="number" defaultValue={editExpenseModal.amount} required style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Xarajat Toifasi *</label>
+                <select name="category" defaultValue={editExpenseModal.category || "Boshqa Xarajatlar"} style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }}>
+                  <option value="O'qituvchi Maoshi">O'qituvchi Maoshi</option>
+                  <option value="Bino Ijarasi">Bino Ijarasi</option>
+                  <option value="Kommunal to'lovlar">Kommunal to'lovlar</option>
+                  <option value="Kanselyariya & Jihozlar">Kanselyariya & Jihozlar</option>
+                  <option value="Marketing & Reklama">Marketing & Reklama</option>
+                  <option value="Internet & Serverlar">Internet & Serverlar</option>
+                  <option value="Boshqa Xarajatlar">Boshqa Xarajatlar</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Sana *</label>
+                <input name="date" type="date" defaultValue={editExpenseModal.date ? String(editExpenseModal.date).slice(0, 10) : ''} style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>Izoh</label>
+                <textarea name="description" defaultValue={editExpenseModal.description || ''} rows={3} style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setEditExpenseModal(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontWeight: '800', cursor: 'pointer' }}>Bekor qilish</button>
+                <button type="submit" disabled={expenseSubmitting} style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '800', cursor: 'pointer' }}>
+                  {expenseSubmitting ? "Saqlanmoqda..." : "O'zgarishlarni Saqlash"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
