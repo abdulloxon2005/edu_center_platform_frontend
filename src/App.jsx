@@ -45,8 +45,8 @@ function AppContent() {
               {/* Public Routes */}
               <Route path="/" element={
                 <>
-                  <div style={{ textAlign: 'center', marginTop: '30px', marginBottom: '40px' }}>
-                    <h1 style={{ fontSize: '42px', fontWeight: '800', color: '#0f172a', lineHeight: '1.2' }}>
+                  <div style={{ textAlign: 'center', marginTop: '20px', marginBottom: '30px', padding: '0 16px' }}>
+                    <h1 style={{ fontSize: 'clamp(24px, 5vw, 42px)', fontWeight: '800', color: '#0f172a', lineHeight: '1.25' }}>
                       O'z kelajagingizni <span className="gradient-text">Ta'lim Plus</span>
                       <br />
                       <span className="gradient-text">Education center</span> bilan quring!

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { authAPI } from '../api';
+import RoziyevLogo from './RoziyevLogo';
 
 function Login() {
     const [loginId, setLoginId] = useState('');
@@ -204,7 +205,7 @@ function Login() {
                             }}
                         >
                             <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>send</span>
-                            {tgLoading ? 'Tekshirilmoqda...' : `Telegram orqali kirish (${telegramUser.first_name})`}
+                            {tgLoading ? 'Tekshirilmoqda...' : 'Telegram orqali kirish'}
                         </button>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '14px 0', color: '#94a3b8', fontSize: '11px', fontWeight: '700' }}>
                             <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
@@ -309,10 +310,20 @@ function Login() {
                 </form>
 
                 {/* BACK TO HOME */}
-                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <div style={{ textAlign: 'center', marginTop: '18px' }}>
                     <Link to="/" style={{ fontSize: '12px', color: '#2563eb', fontWeight: '800', textDecoration: 'none' }}>
                         ← Bosh sahifaga qaytish
                     </Link>
+                </div>
+
+                {/* POWERED BY ROZIYEV SYSTEMS */}
+                <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                        Platforma ishlab chiquvchisi
+                    </span>
+                    <a href="https://t.me/talimplus" target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }} title="Roziyev Systems tomonidan yaratilgan">
+                        <RoziyevLogo height={34} variant="badge" />
+                    </a>
                 </div>
             </div>
         </div>

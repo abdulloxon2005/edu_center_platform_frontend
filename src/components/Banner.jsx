@@ -16,10 +16,17 @@ function Banner() {
     agreement: false
   });
 
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [courses, setCourses] = useState([]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -33,14 +40,35 @@ function Banner() {
     fetchCourses();
   }, []);
 
+  useEffect(() => {
+    const handleSelectCourse = (e) => {
+      const title = e.detail?.courseTitle;
+      if (!title || !courses.length) return;
+      const match = courses.find(c => c.title.toLowerCase().includes(title.toLowerCase()));
+      if (match) {
+        setFormData(prev => ({ ...prev, selectedCourse: String(match.id) }));
+      }
+    };
+    window.addEventListener('select-course', handleSelectCourse);
+    return () => window.removeEventListener('select-course', handleSelectCourse);
+  }, [courses]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setSubmitError('');
+
+    const cleanPhone = formData.phone.trim();
+    const digits = cleanPhone.replace(/\D/g, '');
+    if (digits.length < 9) {
+      setSubmitError("Iltimos, to'liq telefon raqamingizni kiriting (+998...)");
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await crmAPI.createLead({
         full_name: `${formData.firstName} ${formData.lastName}`.trim(),
-        phone: formData.phone,
+        phone: cleanPhone,
         course_id: formData.selectedCourse ? parseInt(formData.selectedCourse) : null,
         notes: "Bepul konsultatsiya so'rovi (saytdan)"
       });
@@ -75,10 +103,26 @@ function Banner() {
   ];
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px', display: 'flex', gap: '30px', alignItems: 'stretch' }}>
+    <div style={{
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: isMobile ? '16px 16px 30px' : '40px 20px',
+      display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
+      gap: isMobile ? '20px' : '30px',
+      alignItems: 'stretch'
+    }}>
       
       {/* Chap tomon: Karusel */}
-      <div style={{ flex: '1.5', borderRadius: '24px', overflow: 'hidden', height: '500px', boxShadow: '0 20px 40px rgba(37,99,235,0.12)', border: '1px solid #bfdbfe' }}>
+      <div style={{
+        flex: isMobile ? 'none' : '1.5',
+        width: '100%',
+        borderRadius: '24px',
+        overflow: 'hidden',
+        height: isMobile ? '240px' : '480px',
+        boxShadow: '0 20px 40px rgba(37,99,235,0.12)',
+        border: '1px solid #bfdbfe'
+      }}>
         <Swiper
           direction={'vertical'}
           autoplay={{ delay: 2500, disableOnInteraction: false }}
@@ -92,9 +136,9 @@ function Banner() {
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 background: 'linear-gradient(to top, rgba(15,23,42,0.9), transparent)',
-                padding: '40px', color: '#ffffff'
+                padding: isMobile ? '20px 16px' : '40px', color: '#ffffff'
               }}>
-                <h2 style={{ fontSize: '32px', color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{slide.title}</h2>
+                <h2 style={{ fontSize: isMobile ? '20px' : '32px', color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{slide.title}</h2>
               </div>
             </SwiperSlide>
           ))}
@@ -102,18 +146,22 @@ function Banner() {
       </div>
 
       {/* O'ng tomon: Bepul konsultatsiya formasi */}
-      <div style={{ 
-        flex: '1', 
-        padding: '40px 30px', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'center',
-        backgroundColor: '#ffffff',
-        borderRadius: '24px',
-        border: '1px solid #bfdbfe',
-        boxShadow: '0 10px 30px rgba(37,99,235,0.08)'
-      }}>
-        <h3 style={{ fontSize: '26px', fontWeight: '800', marginBottom: '8px', color: '#0f172a' }}>
+      <div 
+        id="consultation"
+        style={{ 
+          flex: '1', 
+          width: '100%',
+          padding: isMobile ? '24px 20px' : '40px 30px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'center',
+          backgroundColor: '#ffffff',
+          borderRadius: '24px',
+          border: '1px solid #bfdbfe',
+          boxShadow: '0 10px 30px rgba(37,99,235,0.08)'
+        }}
+      >
+        <h3 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '800', marginBottom: '8px', color: '#0f172a' }}>
           Bepul <span className="gradient-text">Konsultatsiya</span>
         </h3>
         <p style={{ color: '#475569', marginBottom: '25px', fontSize: '14px' }}>Malakali mutaxassislarimizdan maslahat oling. Ma'lumotlaringizni qoldiring.</p>

@@ -2,6 +2,18 @@ import React from 'react';
 import { FiBookOpen, FiGlobe, FiPieChart, FiZap, FiAward, FiClock, FiActivity, FiMessageCircle, FiMessageSquare, FiDroplet } from 'react-icons/fi';
 
 function Courses() {
+  const handleSelectCourse = (title) => {
+    const el = document.getElementById('consultation');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.location.href = '/#consultation';
+    }
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('select-course', { detail: { courseTitle: title } }));
+    }, 100);
+  };
+
   const courses = [
     {
       id: 1,
@@ -159,8 +171,12 @@ function Courses() {
               </div>
             </div>
             
-            <button className="btn-primary" style={{ marginTop: '25px', width: '100%', padding: '12px' }}>
-              Batafsil ma'lumot
+            <button 
+              onClick={() => handleSelectCourse(course.title)}
+              className="btn-primary" 
+              style={{ marginTop: '25px', width: '100%', padding: '12px', fontSize: '14px', cursor: 'pointer' }}
+            >
+              Batafsil ma'lumot / Ro'yxatdan o'tish
             </button>
           </div>
         ))}

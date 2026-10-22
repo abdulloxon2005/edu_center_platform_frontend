@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { analyticsAPI, certificatesAPI, homeworkAPI, attendanceAPI, financeAPI, authAPI } from '../api';
 import { formatMonthUz, formatPaymentMethodUz } from '../utils/formatters';
+import RoziyevLogo from './RoziyevLogo';
 
 export default function StudentApp() {
   const [activeTab, setActiveTab] = useState('home');
@@ -259,6 +260,23 @@ export default function StudentApp() {
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = '/login';
+  };
+
+  const handleDownloadReceiptPdf = async (paymentId) => {
+    try {
+      const blob = await financeAPI.downloadPaymentReceiptPdf(paymentId);
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chek_${paymentId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      triggerToast("To'lov cheki (PDF) yuklab olindi!");
+    } catch (err) {
+      window.open(`/api/v1/finance/payments/${paymentId}/pdf`, '_blank');
+    }
   };
 
   const getGreeting = () => {
@@ -731,7 +749,7 @@ export default function StudentApp() {
                       {/* TEACHER ATTACHED FILE */}
                       {hw.pdf_file_url && (
                         <a
-                          href={`http://127.0.0.1:8000${hw.pdf_file_url}`}
+                          href={hw.pdf_file_url?.startsWith('http') ? hw.pdf_file_url : hw.pdf_file_url}
                           target="_blank"
                           rel="noreferrer"
                           style={{
@@ -1212,6 +1230,17 @@ export default function StudentApp() {
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span> Tizimdan Chiqish
               </button>
+
+              {/* ROZIYEV SYSTEMS ATTRIBUTION */}
+              <div style={{ marginTop: '20px', padding: '16px', borderRadius: '16px', backgroundColor: darkMode ? '#0f172a' : '#f8fafc', border: `1px solid ${darkMode ? '#1e293b' : '#e2e8f0'}`, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Platforma ishlab chiquvchisi
+                </span>
+                <RoziyevLogo height={30} variant="badge" />
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>
+                  Roziyev Systems tomonidan yaratilgan
+                </span>
+              </div>
             </div>
           )}
 
@@ -1412,7 +1441,7 @@ export default function StudentApp() {
               </button>
               <button 
                 type="button" 
-                onClick={() => window.open(`http://127.0.0.1:8000/api/v1/finance/payments/${selectedReceipt.id}/pdf`, '_blank')}
+                onClick={() => handleDownloadReceiptPdf(selectedReceipt.id)}
                 style={{ flex: 1.2, padding: '10px', borderRadius: '12px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span> PDF

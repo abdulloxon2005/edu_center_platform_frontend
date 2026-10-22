@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 176 56" width="176" height="56" fill="none">
+  <!-- Dark Badge Container -->
+  <rect x="0.75" y="0.75" width="174.5" height="54.5" rx="14" fill="#0c1322" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- Stylized Geometric Monogram 'R' -->
+  <g transform="translate(18, 14)">
+    <!-- Lower Left Stem (Vertical pillar with 45-degree angled top bevel) -->
+    <path d="M 0,11.5 L 6.5,5 L 6.5,27.5 L 0,27.5 Z" fill="#ffffff"/>
+    
+    <!-- Upper Loop & Dynamic Right Leg -->
+    <path d="M 0,2.5 L 2.5,0 L 16.5,0 C 22,0 26,3.5 26,9 C 26,14.5 22,17.5 17,17.5 L 26.5,27.5 L 18.5,27.5 L 10.5,18.5 L 6.5,18.5 L 6.5,12.5 L 15.5,12.5 C 18,12.5 19.5,11.2 19.5,9 C 19.5,6.8 18,5.5 15.5,5.5 L 3.5,5.5 Z" fill="#ffffff"/>
+  </g>
+
+  <!-- Typography -->
+  <g transform="translate(56, 13)">
+    <!-- "roziyev" -->
+    <text x="0" y="17" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', Roboto, sans-serif" font-size="19" font-weight="800" letter-spacing="-0.4px">roziyev</text>
+    
+    <!-- "systems" -->
+    <text x="1" y="30" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', Roboto, sans-serif" font-size="9.5" font-weight="600" letter-spacing="3.2px">systems</text>
+  </g>
+</svg>

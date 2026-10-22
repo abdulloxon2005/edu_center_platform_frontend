@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiPhoneCall, FiUser, FiLogOut, FiLayout } from 'react-icons/fi';
+import { FiPhoneCall, FiUser, FiLogOut, FiLayout, FiMenu, FiX } from 'react-icons/fi';
 
 function Navbar() {
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const token = localStorage.getItem('access_token');
   const userRole = localStorage.getItem('user_role');
   const fullName = localStorage.getItem('full_name') || 'Foydalanuvchi';
@@ -11,6 +12,7 @@ function Navbar() {
 
   const handleLogout = () => {
     localStorage.clear();
+    setMobileMenuOpen(false);
     navigate('/login');
   };
 
@@ -19,6 +21,14 @@ function Navbar() {
     if (userRole === 'TEACHER') return '/teacher';
     if (userRole === 'STUDENT') return '/student';
     return '/';
+  };
+
+  const mobileLinkStyle = {
+    padding: '8px 4px',
+    fontSize: '15px',
+    fontWeight: '700',
+    color: '#0f172a',
+    textDecoration: 'none'
   };
 
   return (
@@ -127,7 +137,53 @@ function Navbar() {
             Kirish
           </Link>
         )}
+
+        {/* Mobile Hamburger Button */}
+        <button 
+          className="mobile-only"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Mobil menyuni ochish"
+          style={{
+            background: 'none',
+            border: '1.5px solid #bfdbfe',
+            borderRadius: '10px',
+            padding: '6px 8px',
+            cursor: 'pointer',
+            color: '#1d4ed8',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#eff6ff'
+          }}
+        >
+          {mobileMenuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
+        </button>
       </div>
+
+      {/* Mobile Drawer Dropdown */}
+      {mobileMenuOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          backgroundColor: '#ffffff',
+          borderBottom: '2px solid #2563eb',
+          boxShadow: '0 12px 30px rgba(37,99,235,0.15)',
+          padding: '16px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          zIndex: 999
+        }}>
+          <Link to="/" onClick={() => setMobileMenuOpen(false)} style={mobileLinkStyle}>Bosh Sahifa</Link>
+          <Link to="/fanlar" onClick={() => setMobileMenuOpen(false)} style={mobileLinkStyle}>Fanlar</Link>
+          <Link to="/natijalar" onClick={() => setMobileMenuOpen(false)} style={mobileLinkStyle}>Bizning Natijalar</Link>
+          <a href="tel:+998901234567" style={{ ...mobileLinkStyle, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FiPhoneCall /> +998 90 123 45 67
+          </a>
+        </div>
+      )}
     </nav>
   );
 }

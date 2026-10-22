@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { usersAPI, financeAPI, attendanceAPI, analyticsAPI, coursesAPI, groupsAPI, certificatesAPI, reportsAPI, crmAPI } from '../api';
 import { formatMonthUz, formatPaymentMethodUz } from '../utils/formatters';
+import RoziyevLogo from './RoziyevLogo';
 
 const KpiCard = ({ title, value, change, icon }) => (
   <div style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative', overflow: 'hidden' }}>
@@ -72,6 +73,8 @@ export default function AdminDashboard() {
   const [assignTariffType, setAssignTariffType] = useState('STANDART');
   const [assignCustomPrice, setAssignCustomPrice] = useState('');
   const [assignDiscountNote, setAssignDiscountNote] = useState('');
+  const [assignCourseFilter, setAssignCourseFilter] = useState('ALL');
+  const [assignGroupSearch, setAssignGroupSearch] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showProRataModal, setShowProRataModal] = useState(false);
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false);
@@ -120,7 +123,20 @@ export default function AdminDashboard() {
   const [editExpenseModal, setEditExpenseModal] = useState(null);
   const [expenseSubmitting, setExpenseSubmitting] = useState(false);
   const [expenseCategoryFilter, setExpenseCategoryFilter] = useState('ALL');
+  const [expensePaymentMethodFilter, setExpensePaymentMethodFilter] = useState('ALL');
+  const [expenseEmployeeFilter, setExpenseEmployeeFilter] = useState('ALL');
   const [expenseSearch, setExpenseSearch] = useState('');
+  const [addExpenseEmployeeId, setAddExpenseEmployeeId] = useState('');
+  const [addExpensePaymentMethod, setAddExpensePaymentMethod] = useState('CASH');
+  const [addExpenseEmployeeSearch, setAddExpenseEmployeeSearch] = useState('');
+
+  // 4. Students Section States
+  const [studentsOverviewList, setStudentsOverviewList] = useState([]);
+  const [studentsOverviewLoading, setStudentsOverviewLoading] = useState(false);
+  const [studentOverviewSearch, setStudentOverviewSearch] = useState('');
+  const [studentOverviewCourseFilter, setStudentOverviewCourseFilter] = useState('ALL');
+  const [studentOverviewGroupFilter, setStudentOverviewGroupFilter] = useState('ALL');
+  const [studentOverviewStatusFilter, setStudentOverviewStatusFilter] = useState('ALL');
 
   const normalizePhone = (phoneStr) => {
     if (!phoneStr) return null;
@@ -190,6 +206,23 @@ export default function AdminDashboard() {
       triggerNotification("PDF yuklab olishda xatolik!");
     } finally {
       setStudentDetailPdfLoading(false);
+    }
+  };
+
+  const handleDownloadReceiptPdf = async (paymentId) => {
+    try {
+      const blob = await financeAPI.downloadPaymentReceiptPdf(paymentId);
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chek_${paymentId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      triggerNotification("To'lov cheki (PDF) yuklab olindi!");
+    } catch (err) {
+      window.open(`/api/v1/finance/payments/${paymentId}/pdf`, '_blank');
     }
   };
 
@@ -526,7 +559,78 @@ export default function AdminDashboard() {
     if (activeTab === 'expenses') {
       fetchExpenses();
     }
+    if (activeTab === 'students') {
+      fetchStudentsOverview();
+    }
   }, [activeTab]);
+
+  const fetchStudentsOverview = async () => {
+    setStudentsOverviewLoading(true);
+    try {
+      const data = await usersAPI.getStudentsOverview({
+        search: studentOverviewSearch.trim() || undefined,
+        course_id: studentOverviewCourseFilter !== 'ALL' ? studentOverviewCourseFilter : undefined,
+        group_id: studentOverviewGroupFilter !== 'ALL' ? studentOverviewGroupFilter : undefined,
+        student_status: studentOverviewStatusFilter !== 'ALL' ? studentOverviewStatusFilter : undefined,
+      });
+      if (Array.isArray(data)) setStudentsOverviewList(data);
+    } catch (err) {
+      console.error("fetchStudentsOverview error:", err);
+    } finally {
+      setStudentsOverviewLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'students') {
+      const timer = setTimeout(() => {
+        fetchStudentsOverview();
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [studentOverviewSearch, studentOverviewCourseFilter, studentOverviewGroupFilter, studentOverviewStatusFilter]);
+
+  // Dinamik backend qidiruv: To'lov sahifasida student ID / ism qidirilganda
+  useEffect(() => {
+    const q = (paymentSearchQuery || '').trim();
+    if (!showPaymentModal || !q) return;
+    const timer = setTimeout(async () => {
+      try {
+        const found = await usersAPI.getUsers('STUDENT', q, 50);
+        if (Array.isArray(found) && found.length > 0) {
+          setUsers(prev => {
+            const map = new Map((prev || []).map(u => [u.id, u]));
+            found.forEach(u => map.set(u.id, u));
+            return Array.from(map.values());
+          });
+        }
+      } catch (err) {
+        console.error("Payment search error:", err);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [paymentSearchQuery, showPaymentModal]);
+
+  // Dinamik backend qidiruv: Guruhga biriktirishda o'quvchi qidirilganda
+  useEffect(() => {
+    const q = (assignStudentSearch || '').trim();
+    if (!showAssignStudentModal || !q) return;
+    const timer = setTimeout(async () => {
+      try {
+        const found = await usersAPI.getUsers('STUDENT', q, 50);
+        if (Array.isArray(found) && found.length > 0) {
+          setUsers(prev => {
+            const map = new Map((prev || []).map(u => [u.id, u]));
+            found.forEach(u => map.set(u.id, u));
+            return Array.from(map.values());
+          });
+        }
+      } catch (err) {
+        console.error("Assign student search error:", err);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [assignStudentSearch, showAssignStudentModal]);
 
   const handleUpdateLeadStatus = async (leadId, newStatus, notes = null) => {
     try {
@@ -606,6 +710,7 @@ export default function AdminDashboard() {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { id: 'students', label: "O'quvchilar", icon: 'school' },
     { id: 'leads', label: 'Konsultatsiyalar', icon: 'contact_mail' },
     { id: 'reports', label: 'Hisobotlar', icon: 'summarize' },
     { id: 'users', label: 'Foydalanuvchilar', icon: 'group' },
@@ -867,6 +972,271 @@ export default function AdminDashboard() {
             </table>
           </div>
         )}
+      </div>
+    );
+  };
+
+
+  const renderStudents = () => {
+    const totalStudents = studentsOverviewList.length;
+    const activeStudents = studentsOverviewList.filter(s => s.student_status === 'ACTIVE').length;
+    const debtorsCount = studentsOverviewList.filter(s => s.month_debt > 0).length;
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h2 style={{ fontSize: '26px', fontWeight: '900', color: '#0f172a', margin: 0 }}>O'quvchilar Bo'limi</h2>
+            <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '14px' }}>Barcha o'quvchilar, ularning biriktirilgan guruhlari, fanlari va to'lov holati</p>
+          </div>
+          <button 
+            onClick={() => {
+              setShowAddUserModal(true);
+            }} 
+            style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', padding: '12px 20px', borderRadius: '14px', cursor: 'pointer', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.25)' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person_add</span> + Yangi O'quvchi Qo'shish
+          </button>
+        </div>
+
+        {/* Stats Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '20px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#1d4ed8' }}>Jami O'quvchilar</span>
+              <h3 style={{ margin: '6px 0 0', fontSize: '24px', fontWeight: '900', color: '#0f172a' }}>
+                {totalStudents} nafar
+              </h3>
+            </div>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>school</span>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #bbf7d0', borderRadius: '20px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#15803d' }}>Faol O'quvchilar</span>
+              <h3 style={{ margin: '6px 0 0', fontSize: '24px', fontWeight: '900', color: '#0f172a' }}>
+                {activeStudents} nafar
+              </h3>
+            </div>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>check_circle</span>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #fecaca', borderRadius: '20px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#dc2626' }}>Qarzdor O'quvchilar</span>
+              <h3 style={{ margin: '6px 0 0', fontSize: '24px', fontWeight: '900', color: '#dc2626' }}>
+                {debtorsCount} nafar
+              </h3>
+            </div>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>pending_actions</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters and Search Bar */}
+        <div style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '24px', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Search Input */}
+            <div style={{ flex: '1 1 240px', position: 'relative' }}>
+              <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '20px' }}>search</span>
+              <input 
+                type="text" 
+                placeholder="ID (masalan: 133038), Ism yoki telefon bo'yicha qidiring..." 
+                value={studentOverviewSearch} 
+                onChange={e => setStudentOverviewSearch(e.target.value)}
+                style={{ width: '100%', padding: '10px 14px 10px 40px', borderRadius: '12px', border: '1.5px solid #bfdbfe', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* Course Filter */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>Fan:</label>
+              <select 
+                value={studentOverviewCourseFilter} 
+                onChange={e => setStudentOverviewCourseFilter(e.target.value)}
+                style={{ padding: '9px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', backgroundColor: '#ffffff', fontWeight: '700' }}
+              >
+                <option value="ALL">Barcha Fanlar</option>
+                {(courses || []).map(c => (
+                  <option key={c.id} value={c.id}>{c.title}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Group Filter */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>Guruh:</label>
+              <select 
+                value={studentOverviewGroupFilter} 
+                onChange={e => setStudentOverviewGroupFilter(e.target.value)}
+                style={{ padding: '9px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', backgroundColor: '#ffffff', fontWeight: '700' }}
+              >
+                <option value="ALL">Barcha Guruhlar</option>
+                {(groups || []).map(g => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>Holati:</label>
+              <select 
+                value={studentOverviewStatusFilter} 
+                onChange={e => setStudentOverviewStatusFilter(e.target.value)}
+                style={{ padding: '9px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', backgroundColor: '#ffffff', fontWeight: '700' }}
+              >
+                <option value="ALL">Barcha Holatlar</option>
+                <option value="ACTIVE">Faol (Active)</option>
+                <option value="FROZEN">Muzlatilgan (Frozen)</option>
+                <option value="ARCHIVED">Arxivlangan</option>
+              </select>
+            </div>
+
+            {(studentOverviewSearch || studentOverviewCourseFilter !== 'ALL' || studentOverviewGroupFilter !== 'ALL' || studentOverviewStatusFilter !== 'ALL') && (
+              <button 
+                onClick={() => {
+                  setStudentOverviewSearch('');
+                  setStudentOverviewCourseFilter('ALL');
+                  setStudentOverviewGroupFilter('ALL');
+                  setStudentOverviewStatusFilter('ALL');
+                }}
+                style={{ padding: '9px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', color: '#64748b', fontWeight: '800', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span> Tozalash
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Students Table */}
+        <div style={{ backgroundColor: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
+          {studentsOverviewLoading ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#2563eb', fontWeight: '800' }}>
+              O'quvchilar ro'yxati yuklanmoqda...
+            </div>
+          ) : studentsOverviewList.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+              Mos keluvchi o'quvchi topilmadi.
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+              <thead style={{ backgroundColor: '#f8fafc', color: '#475569', fontWeight: '800' }}>
+                <tr>
+                  <th style={{ padding: '14px 16px' }}>ID</th>
+                  <th style={{ padding: '14px 16px' }}>O'quvchi F.I.Sh</th>
+                  <th style={{ padding: '14px 16px' }}>Telefon</th>
+                  <th style={{ padding: '14px 16px' }}>Biriktirilgan Guruhlar & Fanlar</th>
+                  <th style={{ padding: '14px 16px' }}>Oylik To'lov</th>
+                  <th style={{ padding: '14px 16px' }}>Joriy Holat</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'center' }}>Amallar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {studentsOverviewList.map(st => (
+                  <tr key={st.id} style={{ borderBottom: '1px solid #eff6ff', transition: 'background-color 0.15s' }}>
+                    <td style={{ padding: '14px 16px' }}>
+                      <span 
+                        onClick={() => handleOpenStudentDetail(st)}
+                        style={{ fontWeight: '900', color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}
+                        title="O'quvchi profilini ochish"
+                      >
+                        {st.login_id}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div 
+                        onClick={() => handleOpenStudentDetail(st)}
+                        style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+                      >
+                        <strong style={{ color: '#0f172a', fontSize: '14px' }}>{st.full_name}</strong>
+                        {st.telegram_chat_id ? (
+                          <span style={{ fontSize: '11px', color: '#166534', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check_circle</span> Bot ulangan
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
+                        {st.phone ? <span style={{ fontWeight: '700', color: '#0f172a' }}>{st.phone}</span> : <span style={{ color: '#94a3b8' }}>Telefon yo'q</span>}
+                        {st.parent_phone ? <span style={{ color: '#64748b' }}>Ota-ona: {st.parent_phone}</span> : null}
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      {(!st.groups || st.groups.length === 0) ? (
+                        <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>Guruhga biriktirilmagan</span>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {st.groups.map(g => (
+                            <div key={g.group_id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                              <span style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', padding: '2px 8px', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                                {g.group_name}
+                              </span>
+                              <span style={{ color: '#64748b' }}>({g.course_title} • {g.teacher_name})</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ fontSize: '13px' }}>
+                        <span style={{ fontWeight: '800', color: '#0f172a' }}>
+                          {(st.total_monthly_fee || 0).toLocaleString()} UZS
+                        </span>
+                        {st.month_debt > 0 ? (
+                          <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: '800' }}>
+                            Qarz: {st.month_debt.toLocaleString()} UZS
+                          </div>
+                        ) : st.total_monthly_fee > 0 ? (
+                          <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: '800' }}>
+                            To'langan ✓
+                          </div>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <span style={{
+                        fontSize: '11px', padding: '4px 8px', borderRadius: '6px', fontWeight: '800',
+                        backgroundColor: st.student_status === 'ACTIVE' ? '#dcfce7' : st.student_status === 'FROZEN' ? '#fef3c7' : '#f1f5f9',
+                        color: st.student_status === 'ACTIVE' ? '#166534' : st.student_status === 'FROZEN' ? '#92400e' : '#475569'
+                      }}>
+                        {st.student_status === 'ACTIVE' ? 'Faol' : st.student_status === 'FROZEN' ? 'Muzlatilgan' : st.student_status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                        <button 
+                          onClick={() => handleOpenStudentDetail(st)}
+                          title="To'liq profilni ko'rish"
+                          style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', cursor: 'pointer', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>visibility</span> Profil
+                        </button>
+                        <button 
+                          onClick={() => {
+                            handleSelectStudentForPayment(st);
+                            setShowPaymentModal(true);
+                          }}
+                          title="To'lov qabul qilish"
+                          style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #bbf7d0', backgroundColor: '#f0fdf4', color: '#16a34a', fontWeight: '800', cursor: 'pointer', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>payments</span> To'lov
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     );
   };
@@ -1554,14 +1924,19 @@ export default function AdminDashboard() {
       "Boshqa Xarajatlar"
     ];
 
+    const staffMembers = (users || []).filter(u => u && (u.role === 'TEACHER' || u.role === 'ADMIN' || u.role === 'STAFF'));
+
     const filteredExpenses = (expensesList || []).filter(item => {
       const catMatch = expenseCategoryFilter === 'ALL' || item.category === expenseCategoryFilter;
+      const methodMatch = expensePaymentMethodFilter === 'ALL' || (item.payment_method || 'CASH') === expensePaymentMethodFilter;
+      const empMatch = expenseEmployeeFilter === 'ALL' || String(item.employee_id) === String(expenseEmployeeFilter);
       const s = (expenseSearch || '').toLowerCase().trim();
       const textMatch = !s ||
         (item.title || '').toLowerCase().includes(s) ||
         (item.description || '').toLowerCase().includes(s) ||
-        (item.category || '').toLowerCase().includes(s);
-      return catMatch && textMatch;
+        (item.category || '').toLowerCase().includes(s) ||
+        (item.employee_name || '').toLowerCase().includes(s);
+      return catMatch && methodMatch && empMatch && textMatch;
     });
 
     const totalExpenseAmount = (expensesList || []).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
@@ -1654,9 +2029,36 @@ export default function AdminDashboard() {
               </select>
             </div>
 
-            {(expenseSearch || expenseCategoryFilter !== 'ALL') && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>To'lov turi:</label>
+              <select 
+                value={expensePaymentMethodFilter} 
+                onChange={e => setExpensePaymentMethodFilter(e.target.value)}
+                style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', backgroundColor: '#ffffff', fontWeight: '700' }}
+              >
+                <option value="ALL">Barcha Turlar</option>
+                <option value="CASH">💵 Naqd</option>
+                <option value="CARD">💳 Karta</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>Xodim:</label>
+              <select 
+                value={expenseEmployeeFilter} 
+                onChange={e => setExpenseEmployeeFilter(e.target.value)}
+                style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', backgroundColor: '#ffffff', fontWeight: '700', maxWidth: '180px' }}
+              >
+                <option value="ALL">Barcha Xodimlar</option>
+                {staffMembers.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.full_name}</option>
+                ))}
+              </select>
+            </div>
+
+            {(expenseSearch || expenseCategoryFilter !== 'ALL' || expensePaymentMethodFilter !== 'ALL' || expenseEmployeeFilter !== 'ALL') && (
               <button 
-                onClick={() => { setExpenseSearch(''); setExpenseCategoryFilter('ALL'); }}
+                onClick={() => { setExpenseSearch(''); setExpenseCategoryFilter('ALL'); setExpensePaymentMethodFilter('ALL'); setExpenseEmployeeFilter('ALL'); }}
                 style={{ padding: '9px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', color: '#64748b', fontWeight: '800', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span> Tozalash
@@ -1672,6 +2074,8 @@ export default function AdminDashboard() {
                   <th style={{ padding: '14px 16px' }}>#ID</th>
                   <th style={{ padding: '14px 16px' }}>Xarajat Nomi</th>
                   <th style={{ padding: '14px 16px' }}>Toifasi</th>
+                  <th style={{ padding: '14px 16px' }}>Xodim (Kimga)</th>
+                  <th style={{ padding: '14px 16px' }}>To'lov Turi</th>
                   <th style={{ padding: '14px 16px' }}>Sana</th>
                   <th style={{ padding: '14px 16px' }}>Summa</th>
                   <th style={{ padding: '14px 16px' }}>Izoh</th>
@@ -1688,13 +2092,32 @@ export default function AdminDashboard() {
                         {item.category}
                       </span>
                     </td>
+                    <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: '700', color: item.employee_name ? '#1e40af' : '#94a3b8' }}>
+                      {item.employee_name ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#2563eb' }}>badge</span>
+                          {item.employee_name}
+                        </div>
+                      ) : '—'}
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      {item.payment_method === 'CARD' ? (
+                        <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: '800', border: '1px solid #bfdbfe', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          💳 Karta
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', backgroundColor: '#ecfdf5', color: '#047857', fontWeight: '800', border: '1px solid #a7f3d0', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          💵 Naqd
+                        </span>
+                      )}
+                    </td>
                     <td style={{ padding: '14px 16px', color: '#475569', fontSize: '13px' }}>
                       {item.date ? String(item.date).slice(0, 10) : '-'}
                     </td>
                     <td style={{ padding: '14px 16px', fontWeight: '900', color: '#dc2626', fontSize: '15px' }}>
                       -{(Number(item.amount) || 0).toLocaleString()} UZS
                     </td>
-                    <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px', maxWidth: '240px' }}>
+                    <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px', maxWidth: '200px' }}>
                       {item.description || '-'}
                     </td>
                     <td style={{ padding: '14px 16px', textAlign: 'center' }}>
@@ -3375,6 +3798,19 @@ export default function AdminDashboard() {
             <span className="material-symbols-outlined">logout</span>
             {!sidebarCollapsed && <span>Chiqish</span>}
           </button>
+
+          {!sidebarCollapsed ? (
+            <div style={{ marginTop: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+              <RoziyevLogo height={28} variant="badge" />
+              <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>
+                Roziyev Systems
+              </span>
+            </div>
+          ) : (
+            <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+              <RoziyevLogo height={22} variant="icon-only" />
+            </div>
+          )}
         </div>
       </aside>
 
@@ -3400,6 +3836,7 @@ export default function AdminDashboard() {
 
         <div style={{ padding: '32px', flex: 1, backgroundColor: '#f8fafc' }}>
           {activeTab === 'dashboard' && renderDashboard()}
+          {activeTab === 'students' && renderStudents()}
           {activeTab === 'leads' && renderLeads()}
           {activeTab === 'reports' && renderReports()}
           {activeTab === 'users' && renderUsers()}
@@ -3955,11 +4392,38 @@ export default function AdminDashboard() {
         const allStudents = (users || []).filter(u => u && u.role === 'STUDENT');
         
         // Qidiruv bo'yicha studentlar
+        const sDigits = sQuery.replace(/\D/g, '');
         const filteredStudents = allStudents.filter(s => {
           if (!sQuery) return true;
-          return (s.full_name || '').toLowerCase().includes(sQuery) ||
-                 (s.login_id || '').toLowerCase().includes(sQuery) ||
-                 (s.phone || '').includes(sQuery);
+          const loginId = String(s.login_id || '').toLowerCase();
+          const dbId = String(s.id || '');
+          const name = String(s.full_name || '').toLowerCase();
+          const phone = String(s.phone || '').toLowerCase();
+          const phoneDigits = phone.replace(/\D/g, '');
+
+          return loginId.includes(sQuery) ||
+                 dbId === sQuery ||
+                 name.includes(sQuery) ||
+                 phone.includes(sQuery) ||
+                 (sDigits.length >= 3 && phoneDigits.includes(sDigits));
+        }).sort((a, b) => {
+          if (!sQuery) return 0;
+          const aLogin = String(a.login_id || '').toLowerCase();
+          const bLogin = String(b.login_id || '').toLowerCase();
+          const aId = String(a.id || '');
+          const bId = String(b.id || '');
+
+          const aExact = aLogin === sQuery || aId === sQuery;
+          const bExact = bLogin === sQuery || bId === sQuery;
+          if (aExact && !bExact) return -1;
+          if (!aExact && bExact) return 1;
+
+          const aStarts = aLogin.startsWith(sQuery);
+          const bStarts = bLogin.startsWith(sQuery);
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+
+          return 0;
         });
 
         // Konsultatsiyadagi talabgorlar (leads)
@@ -4288,28 +4752,81 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* 2. GURUHNI TANLASH */}
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '4px', display: 'block' }}>Guruhni tanlang *</label>
-                  <select 
-                    name="group_id" 
-                    required 
-                    value={assignSelectedGroupId || ((groups || [])[0]?.id || '')} 
-                    onChange={e => setAssignSelectedGroupId(e.target.value)}
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #bfdbfe', background: '#f8fafc', fontSize: '14px', boxSizing: 'border-box' }}
-                  >
-                    {(groups || []).length === 0 ? (
-                      <option value="" disabled>Guruhlar mavjud emas (Avval guruh oching)</option>
-                    ) : (
-                      (groups || []).filter(Boolean).map(g => {
-                        const courseTitle = (courses || []).find(c => c && c.id === g.course_id)?.title || 'Fan';
-                        return (
-                          <option key={g.id} value={g.id}>
-                            {g.name} ({g.days_of_week || 'Kunlar'} • {courseTitle})
-                          </option>
-                        );
-                      })
-                    )}
-                  </select>
+                <div style={{ marginBottom: '14px', backgroundColor: '#f8fafc', padding: '14px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b', marginBottom: '8px', display: 'block' }}>
+                    2. Qaysi fanning qaysi guruhiga qo'shmoqchisiz? *
+                  </label>
+                  
+                  {/* Fan (Kurs) filtri va Guruh qidiruvi */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                    <div>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>Fan bo'yicha:</span>
+                      <select
+                        value={assignCourseFilter}
+                        onChange={e => setAssignCourseFilter(e.target.value)}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#ffffff', fontSize: '12px', fontWeight: '700' }}
+                      >
+                        <option value="ALL">Barcha Fanlar (jami {(courses || []).length} ta fan)</option>
+                        {(courses || []).map(c => (
+                          <option key={c.id} value={c.id}>{c.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>Guruh qidirish:</span>
+                      <input
+                        type="text"
+                        placeholder="Guruh nomi..."
+                        value={assignGroupSearch}
+                        onChange={e => setAssignGroupSearch(e.target.value)}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#ffffff', fontSize: '12px', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Guruh tanlash selecti */}
+                  {(() => {
+                    const filteredGroups = (groups || []).filter(Boolean).filter(g => {
+                      if (assignCourseFilter !== 'ALL' && String(g.course_id) !== String(assignCourseFilter)) {
+                        return false;
+                      }
+                      if (assignGroupSearch.trim()) {
+                        const q = assignGroupSearch.toLowerCase().trim();
+                        const courseTitle = ((courses || []).find(c => c && c.id === g.course_id)?.title || '').toLowerCase();
+                        const gName = (g.name || '').toLowerCase();
+                        return gName.includes(q) || courseTitle.includes(q);
+                      }
+                      return true;
+                    });
+
+                    return (
+                      <div>
+                        <select 
+                          name="group_id" 
+                          required 
+                          value={assignSelectedGroupId || (filteredGroups[0]?.id || '')} 
+                          onChange={e => setAssignSelectedGroupId(e.target.value)}
+                          style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #3b82f6', background: '#ffffff', fontSize: '14px', fontWeight: '700', boxSizing: 'border-box' }}
+                        >
+                          {filteredGroups.length === 0 ? (
+                            <option value="" disabled>Ushbu filtr bo'yicha guruh topilmadi</option>
+                          ) : (
+                            filteredGroups.map(g => {
+                              const courseTitle = (courses || []).find(c => c && c.id === g.course_id)?.title || 'Fan';
+                              return (
+                                <option key={g.id} value={g.id}>
+                                  {g.name} — {courseTitle} ({g.days_of_week || 'Kunlar'})
+                                </option>
+                              );
+                            })
+                          )}
+                        </select>
+                        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#64748b' }}>
+                          Mavjud {filteredGroups.length} ta mos guruh ko'rsatilmoqda. Barcha fanlar va guruhlar bo'yicha bemalol tanlashingiz mumkin.
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* 3. TO'LOV TARIFI / IMTIYOZ */}
@@ -4449,59 +4966,112 @@ export default function AdminDashboard() {
                       />
                     </div>
 
-                    <div style={{ maxHeight: '180px', overflowY: 'auto', marginTop: '8px', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '6px', backgroundColor: '#ffffff' }}>
-                      {users
-                        .filter(u => u.role === 'STUDENT' && (
-                          u.full_name.toLowerCase().includes(paymentSearchQuery.toLowerCase()) || 
-                          u.login_id.includes(paymentSearchQuery) ||
-                          (u.phone && u.phone.includes(paymentSearchQuery))
-                        ))
-                        .slice(0, 8)
-                        .map(s => (
-                          <div 
-                            key={s.id}
-                            onClick={() => handleSelectStudentForPayment(s)}
-                            style={{ 
-                              padding: '10px 12px', 
-                              borderRadius: '10px', 
-                              cursor: 'pointer', 
-                              display: 'flex', 
-                              justifyContent: 'space-between', 
-                              alignItems: 'center',
-                              marginBottom: '4px',
-                              backgroundColor: '#f8fafc',
-                              border: '1px solid #f1f5f9',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#eff6ff'}
-                            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                          >
-                            <div>
-                              <span style={{ fontWeight: '800', color: '#0f172a', fontSize: '14px', display: 'block' }}>
-                                {s.full_name}
-                              </span>
-                              <span style={{ fontSize: '12px', color: '#64748b' }}>
-                                ID: <strong style={{ color: '#2563eb' }}>{s.login_id}</strong> • {s.phone}
-                              </span>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{ 
-                                fontSize: '11px', 
-                                padding: '3px 8px', 
-                                borderRadius: '6px', 
-                                backgroundColor: s.telegram_chat_id ? '#dcfce7' : '#f1f5f9',
-                                color: s.telegram_chat_id ? '#166534' : '#64748b',
-                                fontWeight: '800' 
-                              }}>
-                                {s.telegram_chat_id ? 'Bot ulangan' : 'Bot ulanmagan'}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      {users.filter(u => u.role === 'STUDENT' && (u.full_name.toLowerCase().includes(paymentSearchQuery.toLowerCase()) || u.login_id.includes(paymentSearchQuery))).length === 0 && (
-                        <p style={{ margin: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Mos keluvchi o'quvchi topilmadi.</p>
-                      )}
-                    </div>
+                    {(() => {
+                      const qClean = (paymentSearchQuery || '').trim().toLowerCase();
+                      const qDigits = qClean.replace(/\D/g, '');
+                      const matched = (users || [])
+                        .filter(u => u && u.role === 'STUDENT')
+                        .filter(u => {
+                          if (!qClean) return true;
+                          const loginId = String(u.login_id || '').toLowerCase();
+                          const dbId = String(u.id || '');
+                          const name = String(u.full_name || '').toLowerCase();
+                          const phone = String(u.phone || '').toLowerCase();
+                          const phoneDigits = phone.replace(/\D/g, '');
+
+                          return loginId.includes(qClean) ||
+                                 dbId === qClean ||
+                                 name.includes(qClean) ||
+                                 phone.includes(qClean) ||
+                                 (qDigits.length >= 3 && phoneDigits.includes(qDigits));
+                        })
+                        .sort((a, b) => {
+                          if (!qClean) return 0;
+                          const aLogin = String(a.login_id || '').toLowerCase();
+                          const bLogin = String(b.login_id || '').toLowerCase();
+                          const aId = String(a.id || '');
+                          const bId = String(b.id || '');
+
+                          // 1. Exact ID match birinchi chiqsin
+                          const aExact = aLogin === qClean || aId === qClean;
+                          const bExact = bLogin === qClean || bId === qClean;
+                          if (aExact && !bExact) return -1;
+                          if (!aExact && bExact) return 1;
+
+                          // 2. Starts with ID
+                          const aStarts = aLogin.startsWith(qClean);
+                          const bStarts = bLogin.startsWith(qClean);
+                          if (aStarts && !bStarts) return -1;
+                          if (!aStarts && bStarts) return 1;
+
+                          // 3. Name starts with query
+                          const aNameStarts = String(a.full_name || '').toLowerCase().startsWith(qClean);
+                          const bNameStarts = String(b.full_name || '').toLowerCase().startsWith(qClean);
+                          if (aNameStarts && !bNameStarts) return -1;
+                          if (!aNameStarts && bNameStarts) return 1;
+
+                          return 0;
+                        });
+
+                      return (
+                        <div style={{ maxHeight: '200px', overflowY: 'auto', marginTop: '8px', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '6px', backgroundColor: '#ffffff' }}>
+                          {matched.slice(0, 15).map(s => {
+                            const isExactMatch = String(s.login_id || '').toLowerCase() === qClean || String(s.id || '') === qClean;
+                            return (
+                              <div 
+                                key={s.id}
+                                onClick={() => handleSelectStudentForPayment(s)}
+                                style={{ 
+                                  padding: '10px 12px', 
+                                  borderRadius: '10px', 
+                                  cursor: 'pointer', 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between', 
+                                  alignItems: 'center',
+                                  marginBottom: '4px',
+                                  backgroundColor: isExactMatch ? '#eff6ff' : '#f8fafc',
+                                  border: isExactMatch ? '1.5px solid #3b82f6' : '1px solid #f1f5f9',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#eff6ff'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = isExactMatch ? '#eff6ff' : '#f8fafc'}
+                              >
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontWeight: '800', color: '#0f172a', fontSize: '14px' }}>
+                                      {s.full_name}
+                                    </span>
+                                    {isExactMatch && (
+                                      <span style={{ fontSize: '10px', backgroundColor: '#dbeafe', color: '#1d4ed8', padding: '1px 6px', borderRadius: '4px', fontWeight: '800' }}>
+                                        Aniq moslik
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span style={{ fontSize: '12px', color: '#64748b' }}>
+                                    ID: <strong style={{ color: '#2563eb' }}>{s.login_id}</strong> • {s.phone || "Telefon yo'q"}
+                                  </span>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <span style={{ 
+                                    fontSize: '11px', 
+                                    padding: '3px 8px', 
+                                    borderRadius: '6px', 
+                                    backgroundColor: s.telegram_chat_id ? '#dcfce7' : '#f1f5f9',
+                                    color: s.telegram_chat_id ? '#166534' : '#64748b',
+                                    fontWeight: '800' 
+                                  }}>
+                                    {s.telegram_chat_id ? 'Bot ulangan' : 'Bot ulanmagan'}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {matched.length === 0 && (
+                            <p style={{ margin: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Mos keluvchi o'quvchi topilmadi.</p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div style={{ padding: '14px 16px', borderRadius: '16px', backgroundColor: '#eff6ff', border: '1.5px solid #93c5fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -5972,7 +6542,7 @@ export default function AdminDashboard() {
               </button>
               <button 
                 type="button" 
-                onClick={() => window.open(`http://127.0.0.1:8000/api/v1/finance/payments/${selectedPaymentForReceipt.id}/pdf`, '_blank')}
+                onClick={() => handleDownloadReceiptPdf(selectedPaymentForReceipt.id)}
                 style={{ flex: 1.2, padding: '10px', borderRadius: '12px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: '900', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span> PDF
@@ -6189,6 +6759,8 @@ export default function AdminDashboard() {
               const category = e.target.category.value;
               const date = e.target.date.value || new Date().toISOString().slice(0, 10);
               const description = e.target.description.value.trim();
+              const employee_id = e.target.employee_id.value ? parseInt(e.target.employee_id.value) : null;
+              const payment_method = e.target.payment_method.value || 'CASH';
 
               if (!title || !amount || amount <= 0) {
                 triggerNotification("Iltimos, xarajat nomi va summasini to'g'ri kiriting!");
@@ -6197,7 +6769,7 @@ export default function AdminDashboard() {
 
               setExpenseSubmitting(true);
               try {
-                const newExp = await financeAPI.recordExpense({ title, amount, category, date, description });
+                const newExp = await financeAPI.recordExpense({ title, amount, category, date, description, employee_id, payment_method });
                 setExpensesList(prev => [newExp, ...prev]);
                 triggerNotification("Xarajat muvaffaqiyatli qayd etildi!");
                 setShowAddExpenseModal(false);
@@ -6228,6 +6800,36 @@ export default function AdminDashboard() {
                   <option value="Internet & Serverlar">Internet & Serverlar</option>
                   <option value="Boshqa Xarajatlar">Boshqa Xarajatlar</option>
                 </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>
+                  Xodim (Pul qaysi xodimga berilmoqda?)
+                </label>
+                <select name="employee_id" style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#f8fafc' }}>
+                  <option value="">— Xodim tanlanmagan (Umumiy xarajat) —</option>
+                  {(users || []).filter(u => u && (u.role === 'TEACHER' || u.role === 'ADMIN' || u.role === 'STAFF')).map(emp => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.full_name} ({emp.role === 'TEACHER' ? "O'qituvchi" : emp.role === 'ADMIN' ? 'Admin' : 'Xodim'} • ID: {emp.login_id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>
+                  To'lov Turi *
+                </label>
+                <div style={{ display: 'flex', gap: '24px', padding: '10px 14px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '800', fontSize: '14px', color: '#047857' }}>
+                    <input type="radio" name="payment_method" value="CASH" defaultChecked />
+                    <span>💵 Naqd pul</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '800', fontSize: '14px', color: '#1d4ed8' }}>
+                    <input type="radio" name="payment_method" value="CARD" />
+                    <span>💳 Karta (plastik / o'tkazma)</span>
+                  </label>
+                </div>
               </div>
 
               <div>
@@ -6267,10 +6869,12 @@ export default function AdminDashboard() {
               const category = e.target.category.value;
               const date = e.target.date.value;
               const description = e.target.description.value.trim();
+              const employee_id = e.target.employee_id.value ? parseInt(e.target.employee_id.value) : null;
+              const payment_method = e.target.payment_method.value || 'CASH';
 
               setExpenseSubmitting(true);
               try {
-                const updated = await financeAPI.updateExpense(editExpenseModal.id, { title, amount, category, date, description });
+                const updated = await financeAPI.updateExpense(editExpenseModal.id, { title, amount, category, date, description, employee_id, payment_method });
                 setExpensesList(prev => prev.map(x => x.id === editExpenseModal.id ? updated : x));
                 triggerNotification("Xarajat muvaffaqiyatli yangilandi!");
                 setEditExpenseModal(null);
@@ -6301,6 +6905,36 @@ export default function AdminDashboard() {
                   <option value="Internet & Serverlar">Internet & Serverlar</option>
                   <option value="Boshqa Xarajatlar">Boshqa Xarajatlar</option>
                 </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>
+                  Xodim (Pul qaysi xodimga berilmoqda?)
+                </label>
+                <select name="employee_id" defaultValue={editExpenseModal.employee_id || ''} style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box', backgroundColor: '#f8fafc' }}>
+                  <option value="">— Xodim biriktirilmagan —</option>
+                  {(users || []).filter(u => u && (u.role === 'TEACHER' || u.role === 'ADMIN' || u.role === 'STAFF')).map(emp => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.full_name} ({emp.role === 'TEACHER' ? "O'qituvchi" : emp.role === 'ADMIN' ? 'Admin' : 'Xodim'} • ID: {emp.login_id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>
+                  To'lov Turi *
+                </label>
+                <div style={{ display: 'flex', gap: '24px', padding: '10px 14px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '800', fontSize: '14px', color: '#047857' }}>
+                    <input type="radio" name="payment_method" value="CASH" defaultChecked={editExpenseModal.payment_method !== 'CARD'} />
+                    <span>💵 Naqd pul</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '800', fontSize: '14px', color: '#1d4ed8' }}>
+                    <input type="radio" name="payment_method" value="CARD" defaultChecked={editExpenseModal.payment_method === 'CARD'} />
+                    <span>💳 Karta (plastik / o'tkazma)</span>
+                  </label>
+                </div>
               </div>
 
               <div>

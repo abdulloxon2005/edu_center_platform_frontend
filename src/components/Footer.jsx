@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FiPhone, FiMapPin, FiInstagram, FiSend } from 'react-icons/fi';
+import RoziyevLogo from './RoziyevLogo';
 
 function Footer() {
   const currentYear = new Date().getFullYear();
@@ -86,10 +87,11 @@ function Footer() {
           flexWrap: 'wrap', 
           justifyContent: 'space-between', 
           alignItems: 'center',
+          gap: '12px',
           fontSize: '13px',
           color: '#64748b'
         }}>
-          <p>© {currentYear} "Ta'lim Plus" MChJ. Barcha huquqlar himoyalangan.</p>
+          <p style={{ margin: 0 }}>© {currentYear} "Ta'lim Plus" MChJ. Barcha huquqlar himoyalangan.</p>
           <div style={{ display: 'flex', gap: '20px' }}>
             <Link to="/shartlar" style={{ transition: 'color 0.2s', textDecoration: 'none', color: 'inherit' }} onMouseEnter={(e) => e.target.style.color = '#2563eb'} onMouseLeave={(e) => e.target.style.color = '#64748b'}>
               Maxfiylik shartlari
@@ -98,6 +100,40 @@ function Footer() {
               Ommaviy oferta
             </Link>
           </div>
+        </div>
+
+        {/* Roziyev Systems Attribution Badge */}
+        <div style={{
+          marginTop: '20px',
+          paddingTop: '16px',
+          borderTop: '1px dashed #cbd5e1',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '14px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '500' }}>
+              Platforma ishlab chiquvchisi:
+            </span>
+            <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+              Roziyev Systems tomonidan yaratilgan
+            </span>
+          </div>
+
+          <a 
+            href="https://t.me/talimplus" 
+            target="_blank" 
+            rel="noreferrer" 
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px' }}
+            title="Roziyev Systems"
+          >
+            <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+              Crafted by
+            </span>
+            <RoziyevLogo height={36} variant="badge" />
+          </a>
         </div>
 
       </div>

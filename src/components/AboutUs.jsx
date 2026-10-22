@@ -32,9 +32,14 @@ function AboutUs() {
     }
   ];
 
-  const images = Array.from({ length: 10 }, (_, i) => 
-    `https://picsum.photos/seed/${i + 50}/400/300`
-  );
+  const images = [
+    "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?q=80&w=600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=600&auto=format&fit=crop",
+  ];
 
   return (
     <div style={{ padding: '80px 20px', backgroundColor: '#f8fafc' }}>
@@ -105,8 +110,14 @@ function AboutUs() {
           className="continuous-swiper"
         >
           {images.map((url, index) => (
-            <SwiperSlide key={index} style={{ width: '300px', height: '220px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #bfdbfe' }}>
-              <img src={url} alt={`Gallery ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <SwiperSlide key={index} style={{ width: '300px', height: '220px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #bfdbfe', backgroundColor: '#e2e8f0' }}>
+              <img 
+                src={url} 
+                alt={`Gallery ${index}`} 
+                loading="lazy"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
             </SwiperSlide>
           ))}
         </Swiper>

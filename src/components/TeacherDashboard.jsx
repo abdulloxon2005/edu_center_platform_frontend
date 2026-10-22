@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { groupsAPI, attendanceAPI, financeAPI, analyticsAPI, coursesAPI, homeworkAPI } from '../api';
+import RoziyevLogo from './RoziyevLogo';
 
 export default function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -891,6 +892,19 @@ export default function TeacherDashboard() {
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
               {!sidebarCollapsed && !isTablet && 'Chiqish'}
             </button>
+
+            {!sidebarCollapsed && !isTablet ? (
+              <div style={{ marginTop: '14px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                <RoziyevLogo height={28} variant="badge" />
+                <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '700' }}>
+                  Roziyev Systems
+                </span>
+              </div>
+            ) : (
+              <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                <RoziyevLogo height={22} variant="icon-only" />
+              </div>
+            )}
           </div>
         </aside>
       )}

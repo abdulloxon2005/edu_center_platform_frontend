@@ -1,13 +1,13 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 5000,
+  timeout: 15000,
 });
 
 // Request Interceptor: JWT Token qo'shish
@@ -34,8 +34,10 @@ api.interceptors.response.use(
       localStorage.removeItem('user_id');
       localStorage.removeItem('user_name');
       localStorage.removeItem('login_id');
-      // Login sahifasiga yo'naltirish
-      if (window.location.pathname !== '/login') {
+      // Faqat himoyalangan sahifalarda bo'lsa login sahifasiga yo'naltirish
+      const protectedRoutes = ['/admin', '/dashboard', '/teacher', '/student'];
+      const isProtectedRoute = protectedRoutes.some(route => window.location.pathname.startsWith(route));
+      if (isProtectedRoute && window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }
@@ -75,8 +77,15 @@ export const authAPI = {
 
 // 2. Users Service
 export const usersAPI = {
-  getUsers: async (role = null) => {
-    const params = role ? { role } : {};
+  getStudentsOverview: async (params = {}) => {
+    const res = await api.get('/users/students-overview', { params });
+    return res.data;
+  },
+  getUsers: async (role = null, search = null, limit = 500) => {
+    const params = {};
+    if (role) params.role = role;
+    if (search && search.trim()) params.search = search.trim();
+    if (limit) params.limit = limit;
     const res = await api.get('/users/', { params });
     return res.data;
   },
@@ -297,8 +306,8 @@ export const financeAPI = {
     const res = await api.delete(`/finance/expenses/${expenseId}`);
     return res.data;
   },
-  getExpenses: async () => {
-    const res = await api.get('/finance/expenses');
+  getExpenses: async (params = {}) => {
+    const res = await api.get('/finance/expenses', { params });
     return res.data;
   },
   calculatePayroll: async (reqData) => {
