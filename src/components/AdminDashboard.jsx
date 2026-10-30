@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usersAPI, financeAPI, attendanceAPI, analyticsAPI, coursesAPI, groupsAPI, certificatesAPI, reportsAPI, crmAPI } from '../api';
-import { formatMonthUz, formatPaymentMethodUz } from '../utils/formatters';
+import { formatMonthUz, formatPaymentMethodUz, getLocalDateString } from '../utils/formatters';
 import RoziyevLogo from './RoziyevLogo';
 
 const KpiCard = ({ title, value, change, icon }) => (
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
   const [groupJournalLoading, setGroupJournalLoading] = useState(false);
   const [attendanceSearchQuery, setAttendanceSearchQuery] = useState('');
   const [showAdminAddLessonModal, setShowAdminAddLessonModal] = useState(false);
-  const [adminAddLessonDate, setAdminAddLessonDate] = useState(new Date().toISOString().slice(0, 10));
+  const [adminAddLessonDate, setAdminAddLessonDate] = useState(getLocalDateString());
   const [adminAddLessonTopic, setAdminAddLessonTopic] = useState('');
   const [adminAddLessonSaving, setAdminAddLessonSaving] = useState(false);
   const [adminMarkModalLesson, setAdminMarkModalLesson] = useState(null);
@@ -344,6 +344,7 @@ export default function AdminDashboard() {
 
   const handleOpenGroupJournal = async (group) => {
     setSelectedAttendanceGroup(group);
+    setGroupJournalData(null);
     setGroupJournalLoading(true);
     try {
       const journal = await attendanceAPI.getGroupJournal(group.group_id || group.id);
@@ -355,13 +356,13 @@ export default function AdminDashboard() {
     setGroupJournalLoading(false);
   };
 
-  const handleOpenMarkModal = (lesson) => {
+  const handleOpenMarkModal = (lesson, journal = groupJournalData) => {
     setAdminMarkModalLesson(lesson);
     const initialStatus = {};
     const initialNotes = {};
-    if (groupJournalData && groupJournalData.students) {
-      groupJournalData.students.forEach(s => {
-        const existing = groupJournalData.matrix?.[String(s.id)]?.[String(lesson.id)];
+    if (journal && journal.students) {
+      journal.students.forEach(s => {
+        const existing = journal.matrix?.[String(s.id)]?.[String(lesson.id)];
         initialStatus[s.id] = existing ? existing.status : 'PRESENT';
         initialNotes[s.id] = existing ? (existing.note || '') : '';
       });
@@ -378,7 +379,7 @@ export default function AdminDashboard() {
       const attendancesPayload = groupJournalData.students.map(s => ({
         student_id: s.id,
         status: adminMarkStatusMap[s.id] || 'PRESENT',
-        note: adminMarkNoteMap[s.id] || null
+        note: adminMarkNoteMap[s.id] || ''
       }));
 
       await attendanceAPI.markAttendance({
@@ -395,7 +396,7 @@ export default function AdminDashboard() {
       if (journal) setGroupJournalData(journal);
       if (Array.isArray(gSum)) setGroupsAttendanceSummary(gSum);
     } catch(err) {
-      triggerNotification("Davomatni saqlashda xatolik yuz berdi");
+      triggerNotification(err.response?.data?.detail || "Davomatni saqlashda xatolik yuz berdi");
     } finally {
       setAdminMarkSaving(false);
     }
@@ -416,9 +417,9 @@ export default function AdminDashboard() {
       setAdminAddLessonTopic('');
       const journal = await attendanceAPI.getGroupJournal(selectedAttendanceGroup.group_id || selectedAttendanceGroup.id);
       setGroupJournalData(journal);
-      handleOpenMarkModal(newLesson);
+      handleOpenMarkModal(journal?.lessons?.find(l => l.id === newLesson.id) || newLesson, journal);
     } catch(err) {
-      triggerNotification("Dars sanasini yaratishda xatolik yuz berdi");
+      triggerNotification(err.response?.data?.detail || "Dars sanasini yaratishda xatolik yuz berdi");
     }
     setAdminAddLessonSaving(false);
   };
@@ -2647,17 +2648,28 @@ export default function AdminDashboard() {
                           <div style={{ fontSize: '13px', color: '#1d4ed8', fontWeight: '900' }}>
                             {lesson.lesson_date ? lesson.lesson_date.split('-').slice(1).join('/') : '-'}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <div title={lesson.topic || 'Dars'} style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {lesson.topic || 'Dars'}
+                          </div>
+                          <div style={{ marginTop: '3px' }}>
+                            {lesson.attendance_taken ? (
+                              <span title="Davomat olingan va o'qituvchi uchun yopilgan" style={{ fontSize: '10px', fontWeight: '800', color: '#166534', backgroundColor: '#dcfce7', border: '1px solid #86efac', padding: '1px 6px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>lock</span> Yopilgan
+                              </span>
+                            ) : (
+                              <span title="Bu sana uchun davomat hali olinmagan" style={{ fontSize: '10px', fontWeight: '800', color: '#b45309', backgroundColor: '#fef3c7', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '6px' }}>
+                                Olinmagan
+                              </span>
+                            )}
                           </div>
                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', marginTop: '4px' }}>
                             <button 
                               type="button"
                               onClick={() => handleOpenMarkModal(lesson)}
-                              title="Ushbu sana davomatini tahrirlash"
+                              title={lesson.attendance_taken ? "Ushbu sana davomatini tahrirlash" : "Ushbu sana davomatini olish"}
                               style={{ padding: '3px 8px', borderRadius: '6px', border: '1px solid #bfdbfe', backgroundColor: '#ffffff', color: '#2563eb', fontSize: '10px', fontWeight: '800', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
                             >
-                              <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>edit</span> Tahrir
+                              <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{lesson.attendance_taken ? 'edit' : 'fact_check'}</span> {lesson.attendance_taken ? 'Tahrir' : 'Olish'}
                             </button>
                             <button 
                               type="button"
@@ -2707,7 +2719,9 @@ export default function AdminDashboard() {
                         }
                       });
 
-                      const rate = recordedCount > 0 ? Math.round(((presentCount + (lateCount * 0.75)) / recordedCount) * 100) : null;
+                      // Sababli (EXCUSED) darslar hisobga olinmaydi; kechikkan ham kelgan hisoblanadi (backend bilan bir xil)
+                      const countedLessons = presentCount + lateCount + absentCount;
+                      const rate = countedLessons > 0 ? Math.round(((presentCount + lateCount) / countedLessons) * 100) : null;
 
                       return (
                         <tr key={student.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
@@ -2725,7 +2739,10 @@ export default function AdminDashboard() {
                           {groupJournalData.lessons.map(lesson => {
                             const att = groupJournalData.matrix?.[String(student.id)]?.[String(lesson.id)];
                             return (
-                              <td key={lesson.id} style={{ padding: '8px', borderRight: '1px solid #f1f5f9' }}>
+                              <td key={lesson.id} title={att?.note ? `Izoh: ${att.note}` : undefined} style={{ padding: '8px', borderRight: '1px solid #f1f5f9', position: 'relative' }}>
+                                {att?.note && (
+                                  <span style={{ position: 'absolute', top: '4px', right: '8px', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#2563eb' }}></span>
+                                )}
                                 {att ? (
                                   att.status === 'PRESENT' ? (
                                     <span 
@@ -2840,7 +2857,7 @@ export default function AdminDashboard() {
         {/* GROUP CARDS GRID */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
           {filteredGroupSummaries.map(g => {
-            const attendancePercent = g.total_students > 0 ? Math.round((g.attended_count / g.total_students) * 100) : 0;
+            const attendancePercent = g.total_students > 0 ? Math.min(100, Math.round((g.attended_count / g.total_students) * 100)) : 0;
             return (
               <div 
                 key={g.group_id} 
@@ -6331,7 +6348,7 @@ export default function AdminDashboard() {
                   Sana: {adminMarkModalLesson.lesson_date}
                 </span>
                 <h3 style={{ margin: '6px 0 0', fontSize: '18px', fontWeight: '900', color: '#0f172a' }}>
-                  {selectedAttendanceGroup.group_name || selectedAttendanceGroup.name} — Davomat Qilish
+                  {selectedAttendanceGroup.group_name || selectedAttendanceGroup.name} — {adminMarkModalLesson.attendance_taken ? 'Davomatni Tahrirlash' : 'Davomat Qilish'}
                 </h3>
               </div>
               <button 
@@ -6419,6 +6436,13 @@ export default function AdminDashboard() {
                           📋 Sababli
                         </button>
                       </div>
+                      <input
+                        type="text"
+                        placeholder="Izoh..."
+                        value={adminMarkNoteMap[student.id] || ''}
+                        onChange={e => setAdminMarkNoteMap(prev => ({ ...prev, [student.id]: e.target.value }))}
+                        style={{ flexBasis: '100%', padding: '6px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', fontSize: '12px', backgroundColor: '#ffffff' }}
+                      />
                     </div>
                   );
                 })}

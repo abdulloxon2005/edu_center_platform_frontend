@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { groupsAPI, attendanceAPI, financeAPI, analyticsAPI, coursesAPI, homeworkAPI } from '../api';
+import { getLocalDateString } from '../utils/formatters';
 import RoziyevLogo from './RoziyevLogo';
 
 export default function TeacherDashboard() {
@@ -60,7 +61,7 @@ export default function TeacherDashboard() {
 
   const [attendanceStudents, setAttendanceStudents] = useState([]);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [lessonDate, setLessonDate] = useState(new Date().toISOString().split('T')[0]);
+  const [lessonDate, setLessonDate] = useState(getLocalDateString());
   const [lessonTopic, setLessonTopic] = useState('');
   const [attendanceRecords, setAttendanceRecords] = useState({});
   const [attendanceNotes, setAttendanceNotes] = useState({});
@@ -347,7 +348,7 @@ export default function TeacherDashboard() {
     } else if (tab === 'attendance') {
       setAttendanceLoading(true);
       setLessonTopic('');
-      setLessonDate(new Date().toISOString().split('T')[0]);
+      setLessonDate(getLocalDateString());
       try {
         const students = await groupsAPI.getGroupStudents(group.id);
         const studentList = Array.isArray(students) ? students : [];
@@ -358,6 +359,13 @@ export default function TeacherDashboard() {
         setAttendanceNotes({});
       } catch (e) {
         setAttendanceStudents([]);
+      }
+      // Davomat olingan (yopilgan) sanalarni aniqlash uchun jurnalni yuklaymiz
+      try {
+        const journal = await attendanceAPI.getGroupJournal(group.id);
+        setGroupJournalData(journal);
+      } catch (e) {
+        console.error(e);
       }
       setAttendanceLoading(false);
     } else if (tab === 'homeworks') {
@@ -382,8 +390,18 @@ export default function TeacherDashboard() {
     }
   };
 
+  // Tanlangan sana uchun davomat allaqachon olingan (yopilgan) darsni qaytaradi
+  const getTakenLesson = (date) => {
+    if (!groupJournalData || !selectedGroup || groupJournalData.group?.id !== selectedGroup.id) return null;
+    return (groupJournalData.lessons || []).find(l => l.lesson_date === date && l.attendance_taken) || null;
+  };
+
   // Matrix handlers
   const handleOpenTeacherMarkModal = (lesson) => {
+    if (lesson?.attendance_taken) {
+      triggerNotification("Bu sana uchun davomat yopilgan. Tahrirlash faqat admin tomonidan amalga oshiriladi.", 'error');
+      return;
+    }
     triggerHaptic('light');
     setTeacherMarkModalLesson(lesson);
     const statusMap = {};
@@ -1524,6 +1542,7 @@ export default function TeacherDashboard() {
                         </div>
                         <button 
                           type="button" 
+                          disabled={!!getTakenLesson(lessonDate)}
                           onClick={() => {
                             triggerHaptic('light');
                             const allPresent = {};
@@ -1566,12 +1585,24 @@ export default function TeacherDashboard() {
                         </div>
                       </div>
 
+                      {getTakenLesson(lessonDate) && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#fef3c7', border: '1.5px solid #fcd34d', borderRadius: '14px', padding: '10px 14px', color: '#92400e' }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>lock</span>
+                          <div style={{ fontSize: '12px', fontWeight: '700', lineHeight: 1.4 }}>
+                            {lessonDate} sanasi uchun davomat olingan va yopilgan. O'zgartirish kerak bo'lsa, admin tahrirlaydi.
+                          </div>
+                        </div>
+                      )}
+
                       {attendanceLoading ? (
                         <div style={{ padding: '30px', textAlign: 'center', color: '#2563eb', fontWeight: '800', fontSize: '13px' }}>O'quvchilar yuklanmoqda...</div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {attendanceStudents.map((s, idx) => {
-                            const status = attendanceRecords[s.id] || 'PRESENT';
+                            const takenLesson = getTakenLesson(lessonDate);
+                            const isLocked = !!takenLesson;
+                            const lockedRecord = isLocked ? groupJournalData?.matrix?.[String(s.id)]?.[String(takenLesson.id)] : null;
+                            const status = isLocked ? (lockedRecord?.status || null) : (attendanceRecords[s.id] || 'PRESENT');
                             return (
                               <div key={s.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: isMobile ? '10px 12px' : '12px 16px', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderRadius: '14px', border: '1px solid #eff6ff' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
@@ -1584,7 +1615,7 @@ export default function TeacherDashboard() {
                                   </div>
                                   
                                   {/* 4 TOUCH BUTTONS */}
-                                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(4, auto)', gap: '4px', width: isMobile ? '100%' : 'auto' }}>
+                                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(4, auto)', gap: '4px', width: isMobile ? '100%' : 'auto', pointerEvents: isLocked ? 'none' : 'auto', opacity: isLocked ? 0.75 : 1 }}>
                                     <button 
                                       type="button"
                                       onClick={() => handleMarkAttendance(s.id, 'PRESENT')} 
@@ -1619,7 +1650,8 @@ export default function TeacherDashboard() {
                                 <input 
                                   type="text" 
                                   placeholder="Izoh (masalan: 10 daqiqa kechikdi)..." 
-                                  value={attendanceNotes[s.id] || ''} 
+                                  value={isLocked ? (lockedRecord?.note || '') : (attendanceNotes[s.id] || '')} 
+                                  readOnly={isLocked}
                                   onChange={e => setAttendanceNotes({...attendanceNotes, [s.id]: e.target.value})} 
                                   style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', fontSize: '11px', backgroundColor: '#ffffff' }}
                                 />
@@ -1633,7 +1665,7 @@ export default function TeacherDashboard() {
                         <button 
                           type="button" 
                           onClick={async () => {
-                            if (!selectedGroup || attendanceSaving || attendanceStudents.length === 0) return;
+                            if (!selectedGroup || attendanceSaving || attendanceStudents.length === 0 || getTakenLesson(lessonDate)) return;
                             setAttendanceSaving(true);
                             triggerHaptic('medium');
                             try {
@@ -1652,7 +1684,9 @@ export default function TeacherDashboard() {
                                 attendances: attendances
                               });
                               triggerNotification(`${attendances.length} ta o'quvchining davomati saqlandi va Telegram orqali xabar yuborildi!`);
-                              loadGroupSubTabData(selectedGroup, 'matrix');
+                              // Jurnalni yangilab, shu sana davomatini yopamiz
+                              const refreshedJournal = await attendanceAPI.getGroupJournal(selectedGroup.id);
+                              setGroupJournalData(refreshedJournal);
                             } catch (err) {
                               const detail = err.response?.data?.detail || "Davomatni saqlashda xatolik";
                               triggerNotification(detail, 'error');
@@ -1660,21 +1694,21 @@ export default function TeacherDashboard() {
                               setAttendanceSaving(false);
                             }
                           }}
-                          disabled={attendanceStudents.length === 0 || attendanceSaving}
+                          disabled={attendanceStudents.length === 0 || attendanceSaving || !!getTakenLesson(lessonDate)}
                           style={{
                             width: isMobile ? '100%' : 'auto',
                             padding: '12px 24px',
                             borderRadius: '12px',
                             border: 'none',
-                            backgroundColor: (attendanceStudents.length === 0 || attendanceSaving) ? '#94a3b8' : '#2563eb',
+                            backgroundColor: (attendanceStudents.length === 0 || attendanceSaving || getTakenLesson(lessonDate)) ? '#94a3b8' : '#2563eb',
                             color: '#ffffff',
                             fontWeight: '900',
                             fontSize: isMobile ? '13px' : '14px',
-                            cursor: (attendanceStudents.length === 0 || attendanceSaving) ? 'not-allowed' : 'pointer',
+                            cursor: (attendanceStudents.length === 0 || attendanceSaving || getTakenLesson(lessonDate)) ? 'not-allowed' : 'pointer',
                             boxShadow: '0 4px 14px rgba(37,99,235,0.2)'
                           }}
                         >
-                          {attendanceSaving ? "Saqlanmoqda..." : "Davomatni Saqlash & Xabar Yuborish"}
+                          {attendanceSaving ? "Saqlanmoqda..." : getTakenLesson(lessonDate) ? "Davomat yopilgan" : "Davomatni Saqlash & Xabar Yuborish"}
                         </button>
                       </div>
                     </div>
@@ -1731,6 +1765,11 @@ export default function TeacherDashboard() {
                                     <div style={{ fontSize: '11px', fontWeight: '900', color: '#1e3a8a' }}>
                                       {lesson.lesson_date?.split('-')?.slice(1)?.join('/') || lesson.lesson_date}
                                     </div>
+                                    {lesson.attendance_taken ? (
+                                      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '3px', color: '#b45309' }} title="Davomat yopilgan - tahrirlash faqat admin tomonidan">
+                                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>lock</span>
+                                      </div>
+                                    ) : (
                                     <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', marginTop: '3px' }}>
                                       <button 
                                         onClick={() => handleOpenTeacherMarkModal(lesson)}
@@ -1757,6 +1796,7 @@ export default function TeacherDashboard() {
                                         <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
                                       </button>
                                     </div>
+                                    )}
                                   </th>
                                 ))}
                                 {(!groupJournalData.lessons || groupJournalData.lessons.length === 0) && (

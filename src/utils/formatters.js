@@ -57,3 +57,12 @@ export function formatPaymentMethodUz(method) {
   const clean = String(method).trim().toUpperCase();
   return PAYMENT_METHOD_NAMES_UZ[clean] || clean;
 }
+
+// Foydalanuvchi mahalliy vaqti bo'yicha bugungi sana (YYYY-MM-DD). toISOString() UTC beradi va
+// O'zbekistonda tunda (00:00-05:00) kechagi sanani qaytarib yuborardi.
+export function getLocalDateString(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
